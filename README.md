@@ -1,4 +1,4 @@
-# Distribution Payment API Tests
+# Distribusion Payment API Tests
 
 TypeScript + Playwright API automation suite for the [Distribusion Payment Simulation API](https://qa-interview-service.fly.dev/docs).
 
