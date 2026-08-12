@@ -6,7 +6,8 @@ import {
   invalidLuhnCardNumber,
   sepaPaymentMethod,
 } from '../src/data/test-data';
-import { poll } from '../src/helpers/poll';
+import { expectApiError } from '../src/helpers/expect-api-error';
+import { createActivePaymentMethod } from '../src/helpers/payment-lifecycle';
 
 test.describe('payment methods', () => {
   for (const provider of ['adyen', 'checkout'] as const) {
@@ -15,28 +16,14 @@ test.describe('payment methods', () => {
     }, async ({ request }) => {
       const client = new PaymentApiClient(request);
 
-      const createResponse = await client.createPaymentMethod({
+      const { created, active } = await createActivePaymentMethod(client, {
         type: provider,
         card: cardPaymentMethod,
       });
 
-      expect(createResponse.status()).toBe(201);
-      const created = await createResponse.json();
       expect(created.id).toBeTruthy();
       expect(created.status).toBe('processing');
       expect(created.created_at).toBeTruthy();
-
-      const active = await poll(
-        async () => {
-          const response = await client.getPaymentMethod(created.id);
-          expect(response.status()).toBe(200);
-          return response.json();
-        },
-        (paymentMethod) => paymentMethod.status === 'active',
-        {
-          description: `payment method ${created.id} to become active`,
-        },
-      );
 
       expect(active.id).toBe(created.id);
       expect(active.type).toBe(provider);
@@ -56,28 +43,14 @@ test.describe('payment methods', () => {
   }, async ({ request }) => {
     const client = new PaymentApiClient(request);
 
-    const createResponse = await client.createPaymentMethod({
+    const { created, active } = await createActivePaymentMethod(client, {
       type: 'sepa',
       sepa: sepaPaymentMethod,
     });
 
-    expect(createResponse.status()).toBe(201);
-    const created = await createResponse.json();
     expect(created.id).toBeTruthy();
     expect(created.status).toBe('processing');
     expect(created.created_at).toBeTruthy();
-
-    const active = await poll(
-      async () => {
-        const response = await client.getPaymentMethod(created.id);
-        expect(response.status()).toBe(200);
-        return response.json();
-      },
-      (paymentMethod) => paymentMethod.status === 'active',
-      {
-        description: `payment method ${created.id} to become active`,
-      },
-    );
 
     expect(active.type).toBe('sepa');
     expect(active.sepa.holder_name).toBe(sepaPaymentMethod.holder_name);
@@ -102,12 +75,7 @@ test.describe('payment method validation', () => {
       },
     });
 
-    expect(response.status()).toBe(422);
-    const body = await response.json();
-    expect(body.error).toBeTruthy();
-    expect(body.error.code).toBe('invalid_card_number');
-    expect(body.error.message).toBeTruthy();
-    expect(body.error.message.length).toBeGreaterThan(0);
+    await expectApiError(response, 422, 'invalid_card_number');
   });
 
   test('expired card', {
@@ -120,12 +88,7 @@ test.describe('payment method validation', () => {
       card: expiredCardPaymentMethod,
     });
 
-    expect(response.status()).toBe(422);
-    const body = await response.json();
-    expect(body.error).toBeTruthy();
-    expect(body.error.code).toBe('card_expired');
-    expect(body.error.message).toBeTruthy();
-    expect(body.error.message.length).toBeGreaterThan(0);
+    await expectApiError(response, 422, 'card_expired');
   });
 
   test('payment-method schema mismatch', {
@@ -138,11 +101,6 @@ test.describe('payment method validation', () => {
       card: cardPaymentMethod,
     });
 
-    expect(response.status()).toBe(422);
-    const body = await response.json();
-    expect(body.error).toBeTruthy();
-    expect(body.error.code).toBe('schema_mismatch');
-    expect(body.error.message).toBeTruthy();
-    expect(body.error.message.length).toBeGreaterThan(0);
+    await expectApiError(response, 422, 'schema_mismatch');
   });
 });

@@ -5,6 +5,7 @@ import {
   nonexistentPaymentId,
   nonexistentPaymentMethodLookupId,
 } from '../src/data/test-data';
+import { expectApiError } from '../src/helpers/expect-api-error';
 
 const baseURL =
   process.env.BASE_URL ?? 'https://qa-interview-service.fly.dev';
@@ -21,13 +22,7 @@ test('missing API key', {
 
   try {
     const response = await context.get(`/payments/${nonexistentPaymentId}`);
-
-    expect(response.status()).toBe(401);
-    const body = await response.json();
-    expect(body.error).toBeTruthy();
-    expect(body.error.code).toBe('invalid_api_key');
-    expect(body.error.message).toBeTruthy();
-    expect(body.error.message.length).toBeGreaterThan(0);
+    await expectApiError(response, 401, 'invalid_api_key');
   } finally {
     await context.dispose();
   }
@@ -46,13 +41,7 @@ test('invalid API key', {
 
   try {
     const response = await context.get(`/payments/${nonexistentPaymentId}`);
-
-    expect(response.status()).toBe(401);
-    const body = await response.json();
-    expect(body.error).toBeTruthy();
-    expect(body.error.code).toBe('invalid_api_key');
-    expect(body.error.message).toBeTruthy();
-    expect(body.error.message.length).toBeGreaterThan(0);
+    await expectApiError(response, 401, 'invalid_api_key');
   } finally {
     await context.dispose();
   }
@@ -67,12 +56,7 @@ test('unknown payment method', {
     nonexistentPaymentMethodLookupId,
   );
 
-  expect(response.status()).toBe(404);
-  const body = await response.json();
-  expect(body.error).toBeTruthy();
-  expect(body.error.code).toBe('not_found');
-  expect(body.error.message).toBeTruthy();
-  expect(body.error.message.length).toBeGreaterThan(0);
+  await expectApiError(response, 404, 'not_found');
 });
 
 test('unknown payment', {
@@ -82,12 +66,7 @@ test('unknown payment', {
 
   const response = await client.getPayment(nonexistentPaymentId);
 
-  expect(response.status()).toBe(404);
-  const body = await response.json();
-  expect(body.error).toBeTruthy();
-  expect(body.error.code).toBe('not_found');
-  expect(body.error.message).toBeTruthy();
-  expect(body.error.message.length).toBeGreaterThan(0);
+  await expectApiError(response, 404, 'not_found');
 });
 
 test('invalid JSON', {
@@ -135,10 +114,5 @@ test('unsupported media type', {
     data: 'not json',
   });
 
-  expect(response.status()).toBe(415);
-  const body = await response.json();
-  expect(body.error).toBeTruthy();
-  expect(body.error.code).toBe('unsupported_media_type');
-  expect(body.error.message).toBeTruthy();
-  expect(body.error.message.length).toBeGreaterThan(0);
+  await expectApiError(response, 415, 'unsupported_media_type');
 });

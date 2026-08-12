@@ -1,4 +1,4 @@
-import { APIRequestContext, expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { PaymentApiClient } from '../src/client/payment-api.client';
 import {
   cardPaymentMethod,
@@ -9,79 +9,28 @@ import {
   unknownPaymentMethodId,
   unsupportedCurrency,
 } from '../src/data/test-data';
-import { poll } from '../src/helpers/poll';
+import { expectApiError } from '../src/helpers/expect-api-error';
 import { isApiLoggingEnabled } from '../src/helpers/logger';
-
-async function createActiveAdyenPaymentMethod(request: APIRequestContext) {
-  const client = new PaymentApiClient(request);
-
-  const createMethodResponse = await client.createPaymentMethod({
-    type: 'adyen',
-    card: cardPaymentMethod,
-  });
-
-  expect(createMethodResponse.status()).toBe(201);
-  const createdMethod = await createMethodResponse.json();
-
-  return poll(
-    async () => {
-      const response = await client.getPaymentMethod(createdMethod.id);
-      expect(response.status()).toBe(200);
-      return response.json();
-    },
-    (paymentMethod) => paymentMethod.status === 'active',
-    {
-      description: `payment method ${createdMethod.id} to become active`,
-    },
-  );
-}
+import {
+  createActivePaymentMethod,
+  createAndWaitForPayment,
+} from '../src/helpers/payment-lifecycle';
 
 test('creates a successful payment', {
   tag: ['@regression', '@smoke', '@contract', '@e2e'],
 }, async ({ request }, testInfo) => {
   const client = new PaymentApiClient(request);
 
-  const createMethodResponse = await client.createPaymentMethod({
+  const { active: activeMethod } = await createActivePaymentMethod(client, {
     type: 'adyen',
     card: cardPaymentMethod,
   });
 
-  expect(createMethodResponse.status()).toBe(201);
-  const createdMethod = await createMethodResponse.json();
-
-  const activeMethod = await poll(
-    async () => {
-      const response = await client.getPaymentMethod(createdMethod.id);
-      expect(response.status()).toBe(200);
-      return response.json();
-    },
-    (paymentMethod) => paymentMethod.status === 'active',
-    {
-      description: `payment method ${createdMethod.id} to become active`,
-    },
-  );
-
-  const createPaymentResponse = await client.createPayment({
+  const { payment } = await createAndWaitForPayment(client, {
     payment_method_id: activeMethod.id,
     amount: successfulPayment.amount,
     currency: successfulPayment.currency,
   });
-
-  expect(createPaymentResponse.status()).toBe(201);
-  const createdPayment = await createPaymentResponse.json();
-  expect(createdPayment.status).toBe('processing');
-
-  const payment = await poll(
-    async () => {
-      const response = await client.getPayment(createdPayment.id);
-      expect(response.status()).toBe(200);
-      return response.json();
-    },
-    (result) => result.status !== 'processing',
-    {
-      description: `payment ${createdPayment.id} to leave processing`,
-    },
-  );
 
   expect(payment.status).toBe('succeeded');
   expect(payment.payment_method_id).toBe(activeMethod.id);
@@ -106,48 +55,19 @@ test('card decline flow', {
 }, async ({ request }) => {
   const client = new PaymentApiClient(request);
 
-  const createMethodResponse = await client.createPaymentMethod({
-    type: 'adyen',
-    card: declineCardPaymentMethod,
-  });
+  const { created: createdMethod, active: activeMethod } =
+    await createActivePaymentMethod(client, {
+      type: 'adyen',
+      card: declineCardPaymentMethod,
+    });
 
-  expect(createMethodResponse.status()).toBe(201);
-  const createdMethod = await createMethodResponse.json();
   expect(createdMethod.status).toBe('processing');
 
-  const activeMethod = await poll(
-    async () => {
-      const response = await client.getPaymentMethod(createdMethod.id);
-      expect(response.status()).toBe(200);
-      return response.json();
-    },
-    (paymentMethod) => paymentMethod.status === 'active',
-    {
-      description: `payment method ${createdMethod.id} to become active`,
-    },
-  );
-
-  const createPaymentResponse = await client.createPayment({
+  const { payment } = await createAndWaitForPayment(client, {
     payment_method_id: activeMethod.id,
     amount: 1000,
     currency: 'EUR',
   });
-
-  expect(createPaymentResponse.status()).toBe(201);
-  const createdPayment = await createPaymentResponse.json();
-  expect(createdPayment.status).toBe('processing');
-
-  const payment = await poll(
-    async () => {
-      const response = await client.getPayment(createdPayment.id);
-      expect(response.status()).toBe(200);
-      return response.json();
-    },
-    (result) => result.status !== 'processing',
-    {
-      description: `payment ${createdPayment.id} to leave processing`,
-    },
-  );
 
   expect(payment.status).toBe('failed');
   expect(payment.failure_reason).toBe('card_declined');
@@ -161,48 +81,19 @@ test('SEPA decline flow', {
 }, async ({ request }) => {
   const client = new PaymentApiClient(request);
 
-  const createMethodResponse = await client.createPaymentMethod({
-    type: 'sepa',
-    sepa: declineSepaPaymentMethod,
-  });
+  const { created: createdMethod, active: activeMethod } =
+    await createActivePaymentMethod(client, {
+      type: 'sepa',
+      sepa: declineSepaPaymentMethod,
+    });
 
-  expect(createMethodResponse.status()).toBe(201);
-  const createdMethod = await createMethodResponse.json();
   expect(createdMethod.status).toBe('processing');
 
-  const activeMethod = await poll(
-    async () => {
-      const response = await client.getPaymentMethod(createdMethod.id);
-      expect(response.status()).toBe(200);
-      return response.json();
-    },
-    (paymentMethod) => paymentMethod.status === 'active',
-    {
-      description: `payment method ${createdMethod.id} to become active`,
-    },
-  );
-
-  const createPaymentResponse = await client.createPayment({
+  const { payment } = await createAndWaitForPayment(client, {
     payment_method_id: activeMethod.id,
     amount: 1000,
     currency: 'EUR',
   });
-
-  expect(createPaymentResponse.status()).toBe(201);
-  const createdPayment = await createPaymentResponse.json();
-  expect(createdPayment.status).toBe('processing');
-
-  const payment = await poll(
-    async () => {
-      const response = await client.getPayment(createdPayment.id);
-      expect(response.status()).toBe(200);
-      return response.json();
-    },
-    (result) => result.status !== 'processing',
-    {
-      description: `payment ${createdPayment.id} to leave processing`,
-    },
-  );
 
   expect(payment.status).toBe('failed');
   expect(payment.failure_reason).toBe('debit_declined');
@@ -215,53 +106,27 @@ test('payment list is returned oldest first', {
   tag: ['@regression', '@contract'],
 }, async ({ request }, testInfo) => {
   const client = new PaymentApiClient(request);
-  const activeMethod = await createActiveAdyenPaymentMethod(request);
 
-  const createPaymentAResponse = await client.createPayment({
-    payment_method_id: activeMethod.id,
-    amount: 1000,
-    currency: 'EUR',
+  const { active: activeMethod } = await createActivePaymentMethod(client, {
+    type: 'adyen',
+    card: cardPaymentMethod,
   });
 
-  expect(createPaymentAResponse.status()).toBe(201);
-  const createdPaymentA = await createPaymentAResponse.json();
-  expect(createdPaymentA.status).toBe('processing');
-
-  const paymentA = await poll(
-    async () => {
-      const response = await client.getPayment(createdPaymentA.id);
-      expect(response.status()).toBe(200);
-      return response.json();
-    },
-    (result) => result.status !== 'processing',
-    {
-      description: `payment ${createdPaymentA.id} to leave processing`,
-    },
-  );
+  const { created: createdPaymentA, payment: paymentA } =
+    await createAndWaitForPayment(client, {
+      payment_method_id: activeMethod.id,
+      amount: 1000,
+      currency: 'EUR',
+    });
 
   expect(paymentA.status).toBe('succeeded');
 
-  const createPaymentBResponse = await client.createPayment({
-    payment_method_id: activeMethod.id,
-    amount: 2000,
-    currency: 'EUR',
-  });
-
-  expect(createPaymentBResponse.status()).toBe(201);
-  const createdPaymentB = await createPaymentBResponse.json();
-  expect(createdPaymentB.status).toBe('processing');
-
-  const paymentB = await poll(
-    async () => {
-      const response = await client.getPayment(createdPaymentB.id);
-      expect(response.status()).toBe(200);
-      return response.json();
-    },
-    (result) => result.status !== 'processing',
-    {
-      description: `payment ${createdPaymentB.id} to leave processing`,
-    },
-  );
+  const { created: createdPaymentB, payment: paymentB } =
+    await createAndWaitForPayment(client, {
+      payment_method_id: activeMethod.id,
+      amount: 2000,
+      currency: 'EUR',
+    });
 
   expect(paymentB.status).toBe('succeeded');
 
@@ -343,7 +208,10 @@ test.describe('payment validation', () => {
     tag: ['@regression', '@contract', '@negative'],
   }, async ({ request }) => {
     const client = new PaymentApiClient(request);
-    const activeMethod = await createActiveAdyenPaymentMethod(request);
+    const { active: activeMethod } = await createActivePaymentMethod(client, {
+      type: 'adyen',
+      card: cardPaymentMethod,
+    });
 
     const response = await client.createPayment({
       payment_method_id: activeMethod.id,
@@ -351,19 +219,17 @@ test.describe('payment validation', () => {
       currency: 'EUR',
     });
 
-    expect(response.status()).toBe(422);
-    const body = await response.json();
-    expect(body.error).toBeTruthy();
-    expect(body.error.code).toBe('invalid_amount');
-    expect(body.error.message).toBeTruthy();
-    expect(body.error.message.length).toBeGreaterThan(0);
+    await expectApiError(response, 422, 'invalid_amount');
   });
 
   test('unsupported currency', {
     tag: ['@regression', '@contract', '@negative'],
   }, async ({ request }) => {
     const client = new PaymentApiClient(request);
-    const activeMethod = await createActiveAdyenPaymentMethod(request);
+    const { active: activeMethod } = await createActivePaymentMethod(client, {
+      type: 'adyen',
+      card: cardPaymentMethod,
+    });
 
     const response = await client.createPayment({
       payment_method_id: activeMethod.id,
@@ -371,12 +237,7 @@ test.describe('payment validation', () => {
       currency: unsupportedCurrency,
     });
 
-    expect(response.status()).toBe(422);
-    const body = await response.json();
-    expect(body.error).toBeTruthy();
-    expect(body.error.code).toBe('unsupported_currency');
-    expect(body.error.message).toBeTruthy();
-    expect(body.error.message.length).toBeGreaterThan(0);
+    await expectApiError(response, 422, 'unsupported_currency');
   });
 
   test('unknown payment method', {
@@ -390,11 +251,6 @@ test.describe('payment validation', () => {
       currency: 'EUR',
     });
 
-    expect(response.status()).toBe(422);
-    const body = await response.json();
-    expect(body.error).toBeTruthy();
-    expect(body.error.code).toBe('unknown_payment_method');
-    expect(body.error.message).toBeTruthy();
-    expect(body.error.message.length).toBeGreaterThan(0);
+    await expectApiError(response, 422, 'unknown_payment_method');
   });
 });

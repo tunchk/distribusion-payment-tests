@@ -4,65 +4,43 @@ import { logApiRequestAndResponse } from '../helpers/logger';
 export class PaymentApiClient {
   constructor(private readonly request: APIRequestContext) {}
 
-  async createPaymentMethod(body: unknown): Promise<APIResponse> {
-    const response = await this.request.post('/payment-methods', { data: body });
+  private async execute(
+    method: 'GET' | 'POST',
+    path: string,
+    requestBody?: unknown,
+  ): Promise<APIResponse> {
+    const response =
+      method === 'GET'
+        ? await this.request.get(path)
+        : await this.request.post(path, { data: requestBody });
 
     await logApiRequestAndResponse({
-      method: 'POST',
-      path: '/payment-methods',
-      requestBody: body,
+      method,
+      path,
+      requestBody,
       response,
     });
 
     return response;
   }
 
-  async getPaymentMethod(id: string): Promise<APIResponse> {
-    const response = await this.request.get(`/payment-methods/${id}`);
-
-    await logApiRequestAndResponse({
-      method: 'GET',
-      path: `/payment-methods/${id}`,
-      response,
-    });
-
-    return response;
+  createPaymentMethod(body: unknown): Promise<APIResponse> {
+    return this.execute('POST', '/payment-methods', body);
   }
 
-  async listPaymentsByPaymentMethod(id: string): Promise<APIResponse> {
-    const response = await this.request.get(`/payment-methods/${id}/payments`);
-
-    await logApiRequestAndResponse({
-      method: 'GET',
-      path: `/payment-methods/${id}/payments`,
-      response,
-    });
-
-    return response;
+  getPaymentMethod(id: string): Promise<APIResponse> {
+    return this.execute('GET', `/payment-methods/${id}`);
   }
 
-  async createPayment(body: unknown): Promise<APIResponse> {
-    const response = await this.request.post('/payments', { data: body });
-
-    await logApiRequestAndResponse({
-      method: 'POST',
-      path: '/payments',
-      requestBody: body,
-      response,
-    });
-
-    return response;
+  listPaymentsByPaymentMethod(id: string): Promise<APIResponse> {
+    return this.execute('GET', `/payment-methods/${id}/payments`);
   }
 
-  async getPayment(id: string): Promise<APIResponse> {
-    const response = await this.request.get(`/payments/${id}`);
+  createPayment(body: unknown): Promise<APIResponse> {
+    return this.execute('POST', '/payments', body);
+  }
 
-    await logApiRequestAndResponse({
-      method: 'GET',
-      path: `/payments/${id}`,
-      response,
-    });
-
-    return response;
+  getPayment(id: string): Promise<APIResponse> {
+    return this.execute('GET', `/payments/${id}`);
   }
 }
