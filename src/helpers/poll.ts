@@ -4,6 +4,18 @@ export interface PollOptions {
   description?: string;
 }
 
+function formatLastObservedValue(value: unknown): string {
+  if (value === undefined) {
+    return 'No value was observed before timeout.';
+  }
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
 export async function poll<T>(
   fn: () => Promise<T>,
   isDone: (result: T) => boolean,
@@ -22,9 +34,11 @@ export async function poll<T>(
     await new Promise((resolve) => setTimeout(resolve, interval));
   }
 
-  const detail = options.description ? ` (${options.description})` : '';
-  const lastState =
-    lastResult !== undefined ? ` Last value: ${JSON.stringify(lastResult)}` : '';
+  const waitingFor = options.description
+    ? ` while waiting for ${options.description}`
+    : '';
 
-  throw new Error(`Polling timed out after ${timeout}ms${detail}.${lastState}`);
+  throw new Error(
+    `Polling timed out after ${timeout}ms${waitingFor}.\nLast observed value:\n${formatLastObservedValue(lastResult)}`,
+  );
 }
