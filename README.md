@@ -48,13 +48,22 @@ Full suite:
 npm test
 ```
 
+The Playwright config already uses a single worker by default because the suite targets a shared, rate-limited remote API.
+
 Deterministic debug run:
 
 ```bash
 API_LOGGING=true npx playwright test --workers=1
 ```
 
-Single-worker mode keeps request/response logs sequential, which makes it easier to follow one flow at a time.
+Passing `--workers=1` is optional for local debugging; it mainly keeps request/response logs sequential when `API_LOGGING=true`.
+
+### Execution policy
+
+- One worker by default, so request volume stays predictable against the shared API's 300 requests/minute limit.
+- Local retries are disabled so contract failures remain immediately visible.
+- CI uses at most one retry for isolated transient/network issues.
+- The Playwright test timeout is 60 seconds; polling uses a 30-second timeout, so a poll timeout can fail with its own diagnostic message before the overall test timeout.
 
 ## Running tagged suites
 
