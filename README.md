@@ -26,6 +26,12 @@ API_KEY=your-key-here
 npm test
 ```
 
+## Open the latest HTML report
+
+```bash
+npx playwright show-report
+```
+
 ## Why polling?
 
 Creating payment methods and payments is asynchronous. `POST` responses return a minimal `processing` object. Tests poll `GET` endpoints until the resource reaches a terminal state (`active` for payment methods, `succeeded` or `failed` for payments).
