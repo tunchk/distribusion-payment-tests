@@ -114,20 +114,31 @@ Tests poll `GET` until the terminal condition is reached. Polling has configurab
 - Valid Adyen card payment method
 - Valid Checkout card payment method
 - Valid SEPA payment method
+- Valid SEPA payment method with optional BIC
 - Sensitive payment data exposure checks
 - Invalid card number validation
 - Expired card validation
 - Payment-method schema mismatch validation
+- Invalid CVC validation
+- Invalid IBAN validation
+- Invalid BIC validation
+- Invalid holder-name validation
+- `exp_month` lower/upper invalid boundaries (`0`, `13`)
 
 ### Payments
 
-- Successful payment flow
+- Successful Adyen payment flow
+- Successful Checkout payment flow
+- Successful SEPA payment flow
 - Card decline flow
 - SEPA debit decline flow
-- Invalid payment amount validation
+- Minimum valid amount (`1`)
+- Invalid amount (`0`, negative, wrong type)
+- Supported currencies: EUR, USD, GBP
 - Unsupported currency validation
 - Unknown payment method validation
 - Payment listing
+- Empty payment list
 - Oldest-first ordering
 - Cross-endpoint payment identity consistency
 
@@ -137,6 +148,7 @@ Tests poll `GET` until the terminal condition is reached. Polling has configurab
 - Invalid API key
 - Payment method not found
 - Payment not found
+- Payment list for unknown payment method
 - Invalid JSON
 - Unsupported media type
 
