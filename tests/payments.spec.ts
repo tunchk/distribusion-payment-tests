@@ -37,7 +37,7 @@ async function createActiveAdyenPaymentMethod(request: APIRequestContext) {
 }
 
 test('creates a successful payment', {
-  tag: ['@regression', '@smoke', '@contract'],
+  tag: ['@regression', '@smoke', '@contract', '@e2e'],
 }, async ({ request }, testInfo) => {
   const client = new PaymentApiClient(request);
 
@@ -102,7 +102,7 @@ test('creates a successful payment', {
 });
 
 test('card decline flow', {
-  tag: ['@regression', '@smoke', '@contract', '@negative'],
+  tag: ['@regression', '@smoke', '@contract', '@negative', '@e2e'],
 }, async ({ request }) => {
   const client = new PaymentApiClient(request);
 
@@ -157,7 +157,7 @@ test('card decline flow', {
 });
 
 test('SEPA decline flow', {
-  tag: ['@regression', '@smoke', '@contract', '@negative'],
+  tag: ['@regression', '@smoke', '@contract', '@negative', '@e2e'],
 }, async ({ request }) => {
   const client = new PaymentApiClient(request);
 
