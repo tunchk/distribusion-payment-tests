@@ -58,6 +58,9 @@ Creating payment methods and payments is asynchronous. `POST` responses return a
 - Invalid card number validation
 - Expired card validation
 - Payment method schema mismatch validation
+- Invalid payment amount validation
+- Unsupported currency validation
+- Unknown payment method validation
 
 ## Project structure
 

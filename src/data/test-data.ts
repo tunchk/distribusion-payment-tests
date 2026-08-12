@@ -38,3 +38,9 @@ export const successfulPayment = {
   amount: 1000,
   currency: 'EUR' as const,
 };
+
+export const invalidPaymentAmount = 0;
+
+export const unsupportedCurrency = 'TRY';
+
+export const unknownPaymentMethodId = 'pm_nonexistent_test_id';
