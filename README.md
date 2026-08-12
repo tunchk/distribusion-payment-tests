@@ -53,6 +53,8 @@ Creating payment methods and payments is asynchronous. `POST` responses return a
 - Valid SEPA payment method
 - Sensitive payment data exposure checks
 - Successful payment flow
+- Card decline flow
+- SEPA debit decline flow
 
 ## Project structure
 

@@ -6,9 +6,22 @@ export const cardPaymentMethod = {
   cvc: '737',
 } as const;
 
+export const declineCardPaymentMethod = {
+  holder_name: 'Jane Doe',
+  number: '4000000000000002',
+  exp_month: 12,
+  exp_year: 2030,
+  cvc: '737',
+} as const;
+
 export const sepaPaymentMethod = {
   holder_name: 'Jane Doe',
   iban: 'DE89370400440532013000',
+} as const;
+
+export const declineSepaPaymentMethod = {
+  holder_name: 'Jane Doe',
+  iban: 'DE62370400440532013001',
 } as const;
 
 export const successfulPayment = {
