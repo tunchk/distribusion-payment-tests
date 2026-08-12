@@ -112,7 +112,7 @@ test.describe('payment method validation', () => {
   });
 
   test('invalid CVC', {
-    tag: ['@regression', '@contract', '@negative'],
+    tag: ['@regression', '@contract', '@negative', '@boundary'],
   }, async ({ request }) => {
     const client = new PaymentApiClient(request);
 
@@ -144,7 +144,7 @@ test.describe('payment method validation', () => {
   });
 
   test('exp_month below minimum', {
-    tag: ['@regression', '@contract', '@negative'],
+    tag: ['@regression', '@contract', '@negative', '@boundary'],
   }, async ({ request }) => {
     const client = new PaymentApiClient(request);
 
@@ -160,7 +160,7 @@ test.describe('payment method validation', () => {
   });
 
   test('exp_month above maximum', {
-    tag: ['@regression', '@contract', '@negative'],
+    tag: ['@regression', '@contract', '@negative', '@boundary'],
   }, async ({ request }) => {
     const client = new PaymentApiClient(request);
 
@@ -192,7 +192,7 @@ test.describe('payment method validation', () => {
   });
 
   test('invalid BIC', {
-    tag: ['@regression', '@contract', '@negative'],
+    tag: ['@regression', '@contract', '@negative', '@boundary'],
   }, async ({ request }) => {
     const client = new PaymentApiClient(request);
 

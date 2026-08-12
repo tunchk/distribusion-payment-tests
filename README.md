@@ -75,6 +75,7 @@ Tags currently used:
 - `@negative` — expected rejection, validation, decline, and error scenarios
 - `@authentication` — missing and invalid API key scenarios
 - `@e2e` — multi-step payment lifecycle/business flows
+- `@boundary` — boundary-value and type-boundary validation scenarios
 
 ```bash
 npx playwright test --grep @regression
@@ -83,6 +84,7 @@ npx playwright test --grep @contract
 npx playwright test --grep @negative
 npx playwright test --grep @authentication
 npx playwright test --grep @e2e
+npx playwright test --grep @boundary
 ```
 
 The smoke and regression suites are currently expected to fail because the successful-payment contract test exposes a known API contract violation. This reflects a known API contract mismatch rather than an issue with the tag configuration.

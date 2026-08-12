@@ -212,7 +212,7 @@ test('payment list preserves identity and oldest-first ordering', {
 
 test.describe('payment validation', () => {
   test('invalid payment amount', {
-    tag: ['@regression', '@contract', '@negative'],
+    tag: ['@regression', '@contract', '@negative', '@boundary'],
   }, async ({ request }) => {
     const client = new PaymentApiClient(request);
     const { active: activeMethod } = await createActivePaymentMethod(client, {
@@ -262,7 +262,7 @@ test.describe('payment validation', () => {
   });
 
   test('minimum valid amount', {
-    tag: ['@regression', '@contract'],
+    tag: ['@regression', '@contract', '@boundary'],
   }, async ({ request }) => {
     const client = new PaymentApiClient(request);
     const { active: activeMethod } = await createActivePaymentMethod(client, {
@@ -282,7 +282,7 @@ test.describe('payment validation', () => {
   });
 
   test('negative amount', {
-    tag: ['@regression', '@contract', '@negative'],
+    tag: ['@regression', '@contract', '@negative', '@boundary'],
   }, async ({ request }) => {
     const client = new PaymentApiClient(request);
     const { active: activeMethod } = await createActivePaymentMethod(client, {
@@ -300,7 +300,7 @@ test.describe('payment validation', () => {
   });
 
   test('non-integer amount', {
-    tag: ['@regression', '@contract', '@negative'],
+    tag: ['@regression', '@contract', '@negative', '@boundary'],
   }, async ({ request }) => {
     const client = new PaymentApiClient(request);
     const { active: activeMethod } = await createActivePaymentMethod(client, {
