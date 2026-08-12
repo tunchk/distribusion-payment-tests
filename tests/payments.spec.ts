@@ -205,7 +205,7 @@ test('SEPA decline flow', async ({ request }) => {
   expect(payment.currency).toBe('EUR');
 });
 
-test('payment list is returned oldest first', async ({ request }) => {
+test('payment list is returned oldest first', async ({ request }, testInfo) => {
   const client = new PaymentApiClient(request);
   const activeMethod = await createActiveAdyenPaymentMethod(request);
 
@@ -263,23 +263,71 @@ test('payment list is returned oldest first', async ({ request }) => {
   const body = await listResponse.json();
   expect(Array.isArray(body.data)).toBe(true);
 
+  const listedA = body.data.find(
+    (payment: { amount: number }) => payment.amount === 1000,
+  );
+  const listedB = body.data.find(
+    (payment: { amount: number }) => payment.amount === 2000,
+  );
+  const listedAIndex = body.data.findIndex(
+    (payment: { amount: number }) => payment.amount === 1000,
+  );
+  const listedBIndex = body.data.findIndex(
+    (payment: { amount: number }) => payment.amount === 2000,
+  );
+
+  await testInfo.attach('payment-list-identity-context', {
+    body: JSON.stringify(
+      {
+        createdPaymentAId: createdPaymentA.id,
+        listedPaymentAId: listedA?.id,
+        createdPaymentBId: createdPaymentB.id,
+        listedPaymentBId: listedB?.id,
+        createdPaymentACreatedAt: paymentA.created_at,
+        listedPaymentACreatedAt: listedA?.created_at,
+        createdPaymentBCreatedAt: paymentB.created_at,
+        listedPaymentBCreatedAt: listedB?.created_at,
+      },
+      null,
+      2,
+    ),
+    contentType: 'application/json',
+  });
+
+  expect.soft(listedA).toBeTruthy();
+  expect.soft(listedB).toBeTruthy();
+
   const ids = body.data.map((payment: { id: string }) => payment.id);
-  const indexA = ids.indexOf(createdPaymentA.id);
-  const indexB = ids.indexOf(createdPaymentB.id);
+  expect.soft(ids).toContain(createdPaymentA.id);
+  expect.soft(ids).toContain(createdPaymentB.id);
+  expect.soft(listedA?.id).toBe(createdPaymentA.id);
+  expect.soft(listedB?.id).toBe(createdPaymentB.id);
 
-  expect(indexA).not.toBe(-1);
-  expect(indexB).not.toBe(-1);
-  expect(indexA).toBeLessThan(indexB);
+  for (let i = 1; i < body.data.length; i++) {
+    const previousCreatedAt = new Date(body.data[i - 1].created_at).getTime();
+    const currentCreatedAt = new Date(body.data[i].created_at).getTime();
+    expect
+      .soft(previousCreatedAt)
+      .toBeLessThanOrEqual(currentCreatedAt);
+  }
 
-  const listedA = body.data[indexA];
-  expect(listedA.payment_method_id).toBe(activeMethod.id);
-  expect(listedA.amount).toBe(1000);
-  expect(listedA.currency).toBe('EUR');
+  expect.soft(listedAIndex).not.toBe(-1);
+  expect.soft(listedBIndex).not.toBe(-1);
+  expect.soft(listedAIndex).toBeLessThan(listedBIndex);
 
-  const listedB = body.data[indexB];
-  expect(listedB.payment_method_id).toBe(activeMethod.id);
-  expect(listedB.amount).toBe(2000);
-  expect(listedB.currency).toBe('EUR');
+  if (listedA?.created_at && listedB?.created_at) {
+    expect
+      .soft(new Date(listedA.created_at).getTime())
+      .toBeLessThanOrEqual(new Date(listedB.created_at).getTime());
+  }
+
+  expect.soft(listedA?.payment_method_id).toBe(activeMethod.id);
+  expect.soft(listedA?.amount).toBe(1000);
+  expect.soft(listedA?.currency).toBe('EUR');
+
+  expect.soft(listedB?.payment_method_id).toBe(activeMethod.id);
+  expect.soft(listedB?.amount).toBe(2000);
+  expect.soft(listedB?.currency).toBe('EUR');
 });
 
 test.describe('payment validation', () => {
