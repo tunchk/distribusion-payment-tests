@@ -61,6 +61,10 @@ Creating payment methods and payments is asynchronous. `POST` responses return a
 - Invalid payment amount validation
 - Unsupported currency validation
 - Unknown payment method validation
+- Missing API key validation
+- Invalid API key validation
+- Payment method not-found validation
+- Payment not-found validation
 
 ## Project structure
 

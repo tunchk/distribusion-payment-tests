@@ -44,3 +44,9 @@ export const invalidPaymentAmount = 0;
 export const unsupportedCurrency = 'TRY';
 
 export const unknownPaymentMethodId = 'pm_nonexistent_test_id';
+
+export const nonexistentPaymentId = 'pay_nonexistent_test_id';
+
+export const nonexistentPaymentMethodLookupId = 'pm_nonexistent_404_test_id';
+
+export const invalidApiKey = 'invalid-test-api-key';
