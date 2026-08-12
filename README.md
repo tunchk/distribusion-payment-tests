@@ -17,7 +17,9 @@ cp .env.example .env
 Add your API key to `.env`:
 
 ```
+BASE_URL=https://qa-interview-service.fly.dev
 API_KEY=your-key-here
+API_LOGGING=false
 ```
 
 ## Run tests
@@ -25,6 +27,14 @@ API_KEY=your-key-here
 ```bash
 npm test
 ```
+
+To enable request/response debug logging:
+
+```bash
+API_LOGGING=true npm test
+```
+
+Logging is disabled by default, and the API key, full card number, CVC, and IBAN are never logged.
 
 ## Open the latest HTML report
 
@@ -35,6 +45,14 @@ npx playwright show-report
 ## Why polling?
 
 Creating payment methods and payments is asynchronous. `POST` responses return a minimal `processing` object. Tests poll `GET` endpoints until the resource reaches a terminal state (`active` for payment methods, `succeeded` or `failed` for payments).
+
+## Current coverage
+
+- Valid Adyen card payment method
+- Valid Checkout card payment method
+- Valid SEPA payment method
+- Sensitive payment data exposure checks
+- Successful payment flow
 
 ## Project structure
 

@@ -2,8 +2,9 @@ import { expect, test } from '@playwright/test';
 import { PaymentApiClient } from '../src/client/payment-api.client';
 import { cardPaymentMethod, successfulPayment } from '../src/data/test-data';
 import { poll } from '../src/helpers/poll';
+import { isApiLoggingEnabled } from '../src/helpers/logger';
 
-test('creates a successful payment', async ({ request }) => {
+test('creates a successful payment', async ({ request }, testInfo) => {
   const client = new PaymentApiClient(request);
 
   const createMethodResponse = await client.createPaymentMethod({
@@ -52,5 +53,16 @@ test('creates a successful payment', async ({ request }) => {
   expect(payment.payment_method_id).toBe(activeMethod.id);
   expect(payment.amount).toBe(successfulPayment.amount);
   expect(payment.currency).toBe(successfulPayment.currency);
+
+  if (isApiLoggingEnabled()) {
+    const context = `Payment method holder: ${cardPaymentMethod.holder_name}\nPayment holder: ${payment.holder_name}`;
+    // eslint-disable-next-line no-console
+    console.log(context);
+    await testInfo.attach('payment-holder-context', {
+      body: context,
+      contentType: 'text/plain',
+    });
+  }
+
   expect(payment.holder_name).toBe(cardPaymentMethod.holder_name);
 });
