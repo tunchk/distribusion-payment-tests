@@ -69,6 +69,18 @@ test('unknown payment', {
   await expectApiError(response, 404, 'not_found');
 });
 
+test('payment list for unknown payment method', {
+  tag: ['@regression', '@contract', '@negative'],
+}, async ({ request }) => {
+  const client = new PaymentApiClient(request);
+
+  const response = await client.listPaymentsByPaymentMethod(
+    nonexistentPaymentMethodLookupId,
+  );
+
+  await expectApiError(response, 404, 'not_found');
+});
+
 test('invalid JSON', {
   tag: ['@regression', '@contract', '@negative'],
 }, async ({ request }, testInfo) => {

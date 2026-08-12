@@ -5,7 +5,9 @@ import {
   declineCardPaymentMethod,
   declineSepaPaymentMethod,
   invalidPaymentAmount,
+  negativePaymentAmount,
   successfulPayment,
+  supportedCurrencies,
   unknownPaymentMethodId,
   unsupportedCurrency,
 } from '../src/data/test-data';
@@ -253,4 +255,81 @@ test.describe('payment validation', () => {
 
     await expectApiError(response, 422, 'unknown_payment_method');
   });
+
+  test('minimum valid amount', {
+    tag: ['@regression', '@contract'],
+  }, async ({ request }) => {
+    const client = new PaymentApiClient(request);
+    const { active: activeMethod } = await createActivePaymentMethod(client, {
+      type: 'adyen',
+      card: cardPaymentMethod,
+    });
+
+    const { payment } = await createAndWaitForPayment(client, {
+      payment_method_id: activeMethod.id,
+      amount: 1,
+      currency: 'EUR',
+    });
+
+    expect(payment.status).toBe('succeeded');
+    expect(payment.amount).toBe(1);
+    expect(payment.currency).toBe('EUR');
+  });
+
+  test('negative amount', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
+    const client = new PaymentApiClient(request);
+    const { active: activeMethod } = await createActivePaymentMethod(client, {
+      type: 'adyen',
+      card: cardPaymentMethod,
+    });
+
+    const response = await client.createPayment({
+      payment_method_id: activeMethod.id,
+      amount: negativePaymentAmount,
+      currency: 'EUR',
+    });
+
+    await expectApiError(response, 422, 'invalid_amount');
+  });
+
+  test('non-integer amount', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
+    const client = new PaymentApiClient(request);
+    const { active: activeMethod } = await createActivePaymentMethod(client, {
+      type: 'adyen',
+      card: cardPaymentMethod,
+    });
+
+    const response = await client.createPayment({
+      payment_method_id: activeMethod.id,
+      amount: '1000',
+      currency: 'EUR',
+    } as unknown);
+
+    await expectApiError(response, 422, 'invalid_amount');
+  });
 });
+
+for (const currency of supportedCurrencies) {
+  test(`creates a successful payment with ${currency}`, {
+    tag: ['@regression', '@contract'],
+  }, async ({ request }) => {
+    const client = new PaymentApiClient(request);
+    const { active: activeMethod } = await createActivePaymentMethod(client, {
+      type: 'adyen',
+      card: cardPaymentMethod,
+    });
+
+    const { payment } = await createAndWaitForPayment(client, {
+      payment_method_id: activeMethod.id,
+      amount: 1000,
+      currency,
+    });
+
+    expect(payment.status).toBe('succeeded');
+    expect(payment.currency).toBe(currency);
+  });
+}

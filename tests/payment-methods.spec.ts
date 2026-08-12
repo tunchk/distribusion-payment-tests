@@ -3,6 +3,8 @@ import { PaymentApiClient } from '../src/client/payment-api.client';
 import {
   cardPaymentMethod,
   expiredCardPaymentMethod,
+  invalidCvc,
+  invalidIban,
   invalidLuhnCardNumber,
   sepaPaymentMethod,
 } from '../src/data/test-data';
@@ -102,5 +104,69 @@ test.describe('payment method validation', () => {
     });
 
     await expectApiError(response, 422, 'schema_mismatch');
+  });
+
+  test('invalid CVC', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
+    const client = new PaymentApiClient(request);
+
+    const response = await client.createPaymentMethod({
+      type: 'adyen',
+      card: {
+        ...cardPaymentMethod,
+        cvc: invalidCvc,
+      },
+    });
+
+    await expectApiError(response, 422, 'invalid_cvc');
+  });
+
+  test('invalid IBAN', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
+    const client = new PaymentApiClient(request);
+
+    const response = await client.createPaymentMethod({
+      type: 'sepa',
+      sepa: {
+        ...sepaPaymentMethod,
+        iban: invalidIban,
+      },
+    });
+
+    await expectApiError(response, 422, 'invalid_iban');
+  });
+
+  test('exp_month below minimum', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
+    const client = new PaymentApiClient(request);
+
+    const response = await client.createPaymentMethod({
+      type: 'adyen',
+      card: {
+        ...cardPaymentMethod,
+        exp_month: 0,
+      },
+    });
+
+    await expectApiError(response, 422, 'card_expired');
+  });
+
+  test('exp_month above maximum', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
+    const client = new PaymentApiClient(request);
+
+    const response = await client.createPaymentMethod({
+      type: 'adyen',
+      card: {
+        ...cardPaymentMethod,
+        exp_month: 13,
+      },
+    });
+
+    await expectApiError(response, 422, 'card_expired');
   });
 });

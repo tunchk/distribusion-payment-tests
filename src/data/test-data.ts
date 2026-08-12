@@ -16,6 +16,10 @@ export const declineCardPaymentMethod = {
 
 export const invalidLuhnCardNumber = '4111111111111112';
 
+export const invalidCvc = '12';
+
+export const invalidIban = 'DE89370400440532013001';
+
 export const expiredCardPaymentMethod = {
   holder_name: 'Jane Doe',
   number: '4111111111111111',
@@ -41,7 +45,11 @@ export const successfulPayment = {
 
 export const invalidPaymentAmount = 0;
 
+export const negativePaymentAmount = -1;
+
 export const unsupportedCurrency = 'TRY';
+
+export const supportedCurrencies = ['EUR', 'USD', 'GBP'] as const;
 
 export const unknownPaymentMethodId = 'pm_nonexistent_test_id';
 
