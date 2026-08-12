@@ -36,7 +36,9 @@ async function createActiveAdyenPaymentMethod(request: APIRequestContext) {
   );
 }
 
-test('creates a successful payment', async ({ request }, testInfo) => {
+test('creates a successful payment', {
+  tag: ['@regression', '@smoke', '@contract'],
+}, async ({ request }, testInfo) => {
   const client = new PaymentApiClient(request);
 
   const createMethodResponse = await client.createPaymentMethod({
@@ -99,7 +101,9 @@ test('creates a successful payment', async ({ request }, testInfo) => {
   expect(payment.holder_name).toBe(cardPaymentMethod.holder_name);
 });
 
-test('card decline flow', async ({ request }) => {
+test('card decline flow', {
+  tag: ['@regression', '@smoke', '@contract', '@negative'],
+}, async ({ request }) => {
   const client = new PaymentApiClient(request);
 
   const createMethodResponse = await client.createPaymentMethod({
@@ -152,7 +156,9 @@ test('card decline flow', async ({ request }) => {
   expect(payment.currency).toBe('EUR');
 });
 
-test('SEPA decline flow', async ({ request }) => {
+test('SEPA decline flow', {
+  tag: ['@regression', '@smoke', '@contract', '@negative'],
+}, async ({ request }) => {
   const client = new PaymentApiClient(request);
 
   const createMethodResponse = await client.createPaymentMethod({
@@ -205,7 +211,9 @@ test('SEPA decline flow', async ({ request }) => {
   expect(payment.currency).toBe('EUR');
 });
 
-test('payment list is returned oldest first', async ({ request }, testInfo) => {
+test('payment list is returned oldest first', {
+  tag: ['@regression', '@contract'],
+}, async ({ request }, testInfo) => {
   const client = new PaymentApiClient(request);
   const activeMethod = await createActiveAdyenPaymentMethod(request);
 
@@ -331,7 +339,9 @@ test('payment list is returned oldest first', async ({ request }, testInfo) => {
 });
 
 test.describe('payment validation', () => {
-  test('invalid payment amount', async ({ request }) => {
+  test('invalid payment amount', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
     const client = new PaymentApiClient(request);
     const activeMethod = await createActiveAdyenPaymentMethod(request);
 
@@ -349,7 +359,9 @@ test.describe('payment validation', () => {
     expect(body.error.message.length).toBeGreaterThan(0);
   });
 
-  test('unsupported currency', async ({ request }) => {
+  test('unsupported currency', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
     const client = new PaymentApiClient(request);
     const activeMethod = await createActiveAdyenPaymentMethod(request);
 
@@ -367,7 +379,9 @@ test.describe('payment validation', () => {
     expect(body.error.message.length).toBeGreaterThan(0);
   });
 
-  test('unknown payment method', async ({ request }) => {
+  test('unknown payment method', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
     const client = new PaymentApiClient(request);
 
     const response = await client.createPayment({

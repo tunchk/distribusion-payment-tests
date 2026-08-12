@@ -9,7 +9,9 @@ import {
 const baseURL =
   process.env.BASE_URL ?? 'https://qa-interview-service.fly.dev';
 
-test('missing API key', async ({ playwright }) => {
+test('missing API key', {
+  tag: ['@regression', '@contract', '@negative', '@authentication'],
+}, async ({ playwright }) => {
   const context = await playwright.request.newContext({
     baseURL,
     extraHTTPHeaders: {
@@ -31,7 +33,9 @@ test('missing API key', async ({ playwright }) => {
   }
 });
 
-test('invalid API key', async ({ playwright }) => {
+test('invalid API key', {
+  tag: ['@regression', '@contract', '@negative', '@authentication'],
+}, async ({ playwright }) => {
   const context = await playwright.request.newContext({
     baseURL,
     extraHTTPHeaders: {
@@ -54,7 +58,9 @@ test('invalid API key', async ({ playwright }) => {
   }
 });
 
-test('unknown payment method', async ({ request }) => {
+test('unknown payment method', {
+  tag: ['@regression', '@contract', '@negative'],
+}, async ({ request }) => {
   const client = new PaymentApiClient(request);
 
   const response = await client.getPaymentMethod(
@@ -69,7 +75,9 @@ test('unknown payment method', async ({ request }) => {
   expect(body.error.message.length).toBeGreaterThan(0);
 });
 
-test('unknown payment', async ({ request }) => {
+test('unknown payment', {
+  tag: ['@regression', '@contract', '@negative'],
+}, async ({ request }) => {
   const client = new PaymentApiClient(request);
 
   const response = await client.getPayment(nonexistentPaymentId);
@@ -82,7 +90,9 @@ test('unknown payment', async ({ request }) => {
   expect(body.error.message.length).toBeGreaterThan(0);
 });
 
-test('invalid JSON', async ({ request }, testInfo) => {
+test('invalid JSON', {
+  tag: ['@regression', '@contract', '@negative'],
+}, async ({ request }, testInfo) => {
   const malformedJson = '{"payment_method_id":';
 
   const response = await request.post('/payments', {
@@ -115,7 +125,9 @@ test('invalid JSON', async ({ request }, testInfo) => {
   expect(body.error.message.length).toBeGreaterThan(0);
 });
 
-test('unsupported media type', async ({ request }) => {
+test('unsupported media type', {
+  tag: ['@regression', '@contract', '@negative'],
+}, async ({ request }) => {
   const response = await request.post('/payments', {
     headers: {
       'Content-Type': 'text/plain',

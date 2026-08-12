@@ -10,7 +10,9 @@ import { poll } from '../src/helpers/poll';
 
 test.describe('payment methods', () => {
   for (const provider of ['adyen', 'checkout'] as const) {
-    test(`creates a valid ${provider} card payment method`, async ({ request }) => {
+    test(`creates a valid ${provider} card payment method`, {
+      tag: ['@regression', '@smoke', '@contract'],
+    }, async ({ request }) => {
       const client = new PaymentApiClient(request);
 
       const createResponse = await client.createPaymentMethod({
@@ -49,7 +51,9 @@ test.describe('payment methods', () => {
     });
   }
 
-  test('creates a valid SEPA payment method', async ({ request }) => {
+  test('creates a valid SEPA payment method', {
+    tag: ['@regression', '@smoke', '@contract'],
+  }, async ({ request }) => {
     const client = new PaymentApiClient(request);
 
     const createResponse = await client.createPaymentMethod({
@@ -85,7 +89,9 @@ test.describe('payment methods', () => {
 });
 
 test.describe('payment method validation', () => {
-  test('invalid card number', async ({ request }) => {
+  test('invalid card number', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
     const client = new PaymentApiClient(request);
 
     const response = await client.createPaymentMethod({
@@ -104,7 +110,9 @@ test.describe('payment method validation', () => {
     expect(body.error.message.length).toBeGreaterThan(0);
   });
 
-  test('expired card', async ({ request }) => {
+  test('expired card', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
     const client = new PaymentApiClient(request);
 
     const response = await client.createPaymentMethod({
@@ -120,7 +128,9 @@ test.describe('payment method validation', () => {
     expect(body.error.message.length).toBeGreaterThan(0);
   });
 
-  test('payment-method schema mismatch', async ({ request }) => {
+  test('payment-method schema mismatch', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
     const client = new PaymentApiClient(request);
 
     const response = await client.createPaymentMethod({
