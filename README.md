@@ -55,6 +55,9 @@ Creating payment methods and payments is asynchronous. `POST` responses return a
 - Successful payment flow
 - Card decline flow
 - SEPA debit decline flow
+- Invalid card number validation
+- Expired card validation
+- Payment method schema mismatch validation
 
 ## Project structure
 

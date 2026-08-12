@@ -14,6 +14,16 @@ export const declineCardPaymentMethod = {
   cvc: '737',
 } as const;
 
+export const invalidLuhnCardNumber = '4111111111111112';
+
+export const expiredCardPaymentMethod = {
+  holder_name: 'Jane Doe',
+  number: '4111111111111111',
+  exp_month: 1,
+  exp_year: 2020,
+  cvc: '737',
+} as const;
+
 export const sepaPaymentMethod = {
   holder_name: 'Jane Doe',
   iban: 'DE89370400440532013000',

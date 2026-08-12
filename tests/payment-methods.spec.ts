@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { PaymentApiClient } from '../src/client/payment-api.client';
-import { cardPaymentMethod, sepaPaymentMethod } from '../src/data/test-data';
+import {
+  cardPaymentMethod,
+  expiredCardPaymentMethod,
+  invalidLuhnCardNumber,
+  sepaPaymentMethod,
+} from '../src/data/test-data';
 import { poll } from '../src/helpers/poll';
 
 test.describe('payment methods', () => {
@@ -76,5 +81,58 @@ test.describe('payment methods', () => {
 
     const responseBody = JSON.stringify(active);
     expect(responseBody).not.toContain(sepaPaymentMethod.iban);
+  });
+});
+
+test.describe('payment method validation', () => {
+  test('invalid card number', async ({ request }) => {
+    const client = new PaymentApiClient(request);
+
+    const response = await client.createPaymentMethod({
+      type: 'adyen',
+      card: {
+        ...cardPaymentMethod,
+        number: invalidLuhnCardNumber,
+      },
+    });
+
+    expect(response.status()).toBe(422);
+    const body = await response.json();
+    expect(body.error).toBeTruthy();
+    expect(body.error.code).toBe('invalid_card_number');
+    expect(body.error.message).toBeTruthy();
+    expect(body.error.message.length).toBeGreaterThan(0);
+  });
+
+  test('expired card', async ({ request }) => {
+    const client = new PaymentApiClient(request);
+
+    const response = await client.createPaymentMethod({
+      type: 'adyen',
+      card: expiredCardPaymentMethod,
+    });
+
+    expect(response.status()).toBe(422);
+    const body = await response.json();
+    expect(body.error).toBeTruthy();
+    expect(body.error.code).toBe('card_expired');
+    expect(body.error.message).toBeTruthy();
+    expect(body.error.message.length).toBeGreaterThan(0);
+  });
+
+  test('payment-method schema mismatch', async ({ request }) => {
+    const client = new PaymentApiClient(request);
+
+    const response = await client.createPaymentMethod({
+      type: 'sepa',
+      card: cardPaymentMethod,
+    });
+
+    expect(response.status()).toBe(422);
+    const body = await response.json();
+    expect(body.error).toBeTruthy();
+    expect(body.error.code).toBe('schema_mismatch');
+    expect(body.error.message).toBeTruthy();
+    expect(body.error.message.length).toBeGreaterThan(0);
   });
 });
