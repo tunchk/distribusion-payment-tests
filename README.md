@@ -87,6 +87,28 @@ npx playwright test --grep @e2e
 
 The smoke and regression suites are currently expected to fail because the successful-payment contract test exposes a known API contract violation. This reflects a known API contract mismatch rather than an issue with the tag configuration.
 
+## Continuous integration
+
+GitHub Actions runs on pushes and pull requests.
+
+CI performs:
+
+- dependency installation with `npm ci`
+- TypeScript type checking
+- the `@regression` Playwright suite
+
+API credentials come from the repository's `API_KEY` GitHub Actions secret. The base URL is configured in the workflow. CI uses one retry through the existing Playwright config for isolated transient/network failures.
+
+Known contract violations are intentionally not excluded, so the workflow remains red while those API mismatches exist.
+
+Repository setup:
+
+Settings → Secrets and variables → Actions → New repository secret
+
+Secret name:
+
+`API_KEY`
+
 ## Debug logging
 
 Logging is disabled by default. When `API_LOGGING=true`, the suite logs HTTP method/path, request body, response status, and response body.
@@ -198,12 +220,14 @@ Intentionally excluded to keep the exercise focused and avoid unnecessary load o
 - load/stress testing
 - deliberate rate-limit exhaustion
 - 413 payload-too-large testing
-- CI/CD setup
 - full OpenAPI/JSON Schema validator integration
 
 ## Project structure
 
 ```
+.github/
+  workflows/
+    api-tests.yml
 src/
   client/
     payment-api.client.ts
