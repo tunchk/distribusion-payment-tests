@@ -20,6 +20,12 @@ export const invalidCvc = '12';
 
 export const invalidIban = 'DE89370400440532013001';
 
+export const invalidHolderName = '';
+
+export const invalidBic = 'BAD';
+
+export const validBic = 'COBADEFF';
+
 export const expiredCardPaymentMethod = {
   holder_name: 'Jane Doe',
   number: '4111111111111111',

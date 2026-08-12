@@ -6,6 +6,7 @@ import {
   declineSepaPaymentMethod,
   invalidPaymentAmount,
   negativePaymentAmount,
+  sepaPaymentMethod,
   successfulPayment,
   supportedCurrencies,
   unknownPaymentMethodId,
@@ -333,3 +334,65 @@ for (const currency of supportedCurrencies) {
     expect(payment.currency).toBe(currency);
   });
 }
+
+test('successful Checkout payment', {
+  tag: ['@regression', '@contract', '@e2e'],
+}, async ({ request }) => {
+  const client = new PaymentApiClient(request);
+
+  const { active: activeMethod } = await createActivePaymentMethod(client, {
+    type: 'checkout',
+    card: cardPaymentMethod,
+  });
+
+  const { payment } = await createAndWaitForPayment(client, {
+    payment_method_id: activeMethod.id,
+    amount: 1000,
+    currency: 'EUR',
+  });
+
+  expect(payment.status).toBe('succeeded');
+  expect(payment.payment_method_id).toBe(activeMethod.id);
+  expect(payment.amount).toBe(1000);
+  expect(payment.currency).toBe('EUR');
+});
+
+test('successful SEPA payment', {
+  tag: ['@regression', '@contract', '@e2e'],
+}, async ({ request }) => {
+  const client = new PaymentApiClient(request);
+
+  const { active: activeMethod } = await createActivePaymentMethod(client, {
+    type: 'sepa',
+    sepa: sepaPaymentMethod,
+  });
+
+  const { payment } = await createAndWaitForPayment(client, {
+    payment_method_id: activeMethod.id,
+    amount: 1000,
+    currency: 'EUR',
+  });
+
+  expect(payment.status).toBe('succeeded');
+  expect(payment.payment_method_id).toBe(activeMethod.id);
+  expect(payment.amount).toBe(1000);
+  expect(payment.currency).toBe('EUR');
+});
+
+test('empty payment list', {
+  tag: ['@regression', '@contract'],
+}, async ({ request }) => {
+  const client = new PaymentApiClient(request);
+
+  const { active: activeMethod } = await createActivePaymentMethod(client, {
+    type: 'adyen',
+    card: cardPaymentMethod,
+  });
+
+  const listResponse = await client.listPaymentsByPaymentMethod(activeMethod.id);
+
+  expect(listResponse.status()).toBe(200);
+  const body = await listResponse.json();
+  expect(Array.isArray(body.data)).toBe(true);
+  expect(body.data).toEqual([]);
+});

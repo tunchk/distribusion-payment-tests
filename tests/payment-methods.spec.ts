@@ -3,10 +3,13 @@ import { PaymentApiClient } from '../src/client/payment-api.client';
 import {
   cardPaymentMethod,
   expiredCardPaymentMethod,
+  invalidBic,
   invalidCvc,
+  invalidHolderName,
   invalidIban,
   invalidLuhnCardNumber,
   sepaPaymentMethod,
+  validBic,
 } from '../src/data/test-data';
 import { expectApiError } from '../src/helpers/expect-api-error';
 import { createActivePaymentMethod } from '../src/helpers/payment-lifecycle';
@@ -169,4 +172,55 @@ test.describe('payment method validation', () => {
 
     await expectApiError(response, 422, 'card_expired');
   });
+
+  test('invalid holder name', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
+    const client = new PaymentApiClient(request);
+
+    const response = await client.createPaymentMethod({
+      type: 'adyen',
+      card: {
+        ...cardPaymentMethod,
+        holder_name: invalidHolderName,
+      },
+    });
+
+    await expectApiError(response, 422, 'invalid_holder_name');
+  });
+
+  test('invalid BIC', {
+    tag: ['@regression', '@contract', '@negative'],
+  }, async ({ request }) => {
+    const client = new PaymentApiClient(request);
+
+    const response = await client.createPaymentMethod({
+      type: 'sepa',
+      sepa: {
+        ...sepaPaymentMethod,
+        bic: invalidBic,
+      },
+    });
+
+    await expectApiError(response, 422, 'invalid_bic');
+  });
+});
+
+test('creates a valid SEPA payment method with optional BIC', {
+  tag: ['@regression', '@contract'],
+}, async ({ request }) => {
+  const client = new PaymentApiClient(request);
+
+  const { active } = await createActivePaymentMethod(client, {
+    type: 'sepa',
+    sepa: {
+      ...sepaPaymentMethod,
+      bic: validBic,
+    },
+  });
+
+  expect(active.type).toBe('sepa');
+  expect(active.status).toBe('active');
+  expect(active.sepa.holder_name).toBe(sepaPaymentMethod.holder_name);
+  expect(active.sepa.iban_last4).toBe(sepaPaymentMethod.iban.slice(-4));
 });
