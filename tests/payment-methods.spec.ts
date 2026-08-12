@@ -32,6 +32,7 @@ test.describe('payment methods', () => {
 
       expect(active.id).toBe(created.id);
       expect(active.type).toBe(provider);
+      expect(active.card.brand).toBe('visa');
       expect(active.card.holder_name).toBe(cardPaymentMethod.holder_name);
       expect(active.card.last4).toBe(cardPaymentMethod.number.slice(-4));
       expect(active.card.exp_month).toBe(cardPaymentMethod.exp_month);
@@ -59,6 +60,7 @@ test.describe('payment methods', () => {
 
     expect(active.type).toBe('sepa');
     expect(active.sepa.holder_name).toBe(sepaPaymentMethod.holder_name);
+    expect(active.sepa.country).toBe('DE');
     expect(active.sepa.iban_last4).toBe(sepaPaymentMethod.iban.slice(-4));
 
     const responseBody = JSON.stringify(active);
@@ -222,5 +224,6 @@ test('creates a valid SEPA payment method with optional BIC', {
   expect(active.type).toBe('sepa');
   expect(active.status).toBe('active');
   expect(active.sepa.holder_name).toBe(sepaPaymentMethod.holder_name);
+  expect(active.sepa.country).toBe('DE');
   expect(active.sepa.iban_last4).toBe(sepaPaymentMethod.iban.slice(-4));
 });

@@ -36,9 +36,11 @@ test('creates a successful payment', {
   });
 
   expect(payment.status).toBe('succeeded');
+  expect(payment.failure_reason).toBeUndefined();
   expect(payment.payment_method_id).toBe(activeMethod.id);
   expect(payment.amount).toBe(successfulPayment.amount);
   expect(payment.currency).toBe(successfulPayment.currency);
+  expect(payment.created_at).toBeTruthy();
 
   if (isApiLoggingEnabled()) {
     const context = `Payment method holder: ${cardPaymentMethod.holder_name}\nPayment holder: ${payment.holder_name}`;
@@ -77,6 +79,7 @@ test('card decline flow', {
   expect(payment.payment_method_id).toBe(activeMethod.id);
   expect(payment.amount).toBe(1000);
   expect(payment.currency).toBe('EUR');
+  expect(payment.created_at).toBeTruthy();
 });
 
 test('SEPA decline flow', {
@@ -103,9 +106,10 @@ test('SEPA decline flow', {
   expect(payment.payment_method_id).toBe(activeMethod.id);
   expect(payment.amount).toBe(1000);
   expect(payment.currency).toBe('EUR');
+  expect(payment.created_at).toBeTruthy();
 });
 
-test('payment list is returned oldest first', {
+test('payment list preserves identity and oldest-first ordering', {
   tag: ['@regression', '@contract'],
 }, async ({ request }, testInfo) => {
   const client = new PaymentApiClient(request);
@@ -355,6 +359,7 @@ test('successful Checkout payment', {
   expect(payment.payment_method_id).toBe(activeMethod.id);
   expect(payment.amount).toBe(1000);
   expect(payment.currency).toBe('EUR');
+  expect(payment.created_at).toBeTruthy();
 });
 
 test('successful SEPA payment', {
@@ -377,6 +382,7 @@ test('successful SEPA payment', {
   expect(payment.payment_method_id).toBe(activeMethod.id);
   expect(payment.amount).toBe(1000);
   expect(payment.currency).toBe('EUR');
+  expect(payment.created_at).toBeTruthy();
 });
 
 test('empty payment list', {

@@ -208,8 +208,10 @@ src/
   client/
     payment-api.client.ts
   helpers/
-    poll.ts
+    expect-api-error.ts
     logger.ts
+    payment-lifecycle.ts
+    poll.ts
   data/
     test-data.ts
 tests/
