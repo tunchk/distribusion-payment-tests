@@ -66,6 +66,8 @@ Creating payment methods and payments is asynchronous. `POST` responses return a
 - Payment method not-found validation
 - Payment not-found validation
 - Payment listing and oldest-first ordering
+- Invalid JSON handling
+- Unsupported media type handling
 
 ## Project structure
 
