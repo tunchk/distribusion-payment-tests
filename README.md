@@ -76,7 +76,7 @@ npx playwright test --grep @authentication
 npx playwright test --grep @e2e
 ```
 
-The smoke and regression suites are currently expected to fail because the successful-payment contract test exposes a known API contract violation. That is an API mismatch, not a broken tag setup.
+The smoke and regression suites are currently expected to fail because the successful-payment contract test exposes a known API contract violation. This reflects a known API contract mismatch rather than an issue with the tag configuration.
 
 ## Debug logging
 
@@ -133,28 +133,30 @@ Tests poll `GET` until the terminal condition is reached. Polling has configurab
 
 ## Known contract violations
 
-These two failures are stable and treated as contract violations, not flaky tests. Assertions are left failing on purpose. There are no workarounds or expected-failure annotations.
+These two failures are stable and treated as contract violations. Assertions are left failing on purpose. There are no workarounds or expected-failure annotations.
 
 ### 1. Payment holder-name inconsistency
 
 Observed:
 
-- The payment method becomes `active` with `holder_name` `"Jane Doe"`.
-- `GET /payments/{id}` returns `holder_name` `"Jane Do"`.
+- The end-to-end payment flow itself completes successfully.
+- The payment reaches status `"succeeded"`.
+- The test fails only because the payment method returns `holder_name` `"Jane Doe"` while `GET /payments/{id}` returns `"Jane Do"`.
 
-The contract says `Payment.holder_name` is the holder name of the payment method used for that payment. The successful-payment assertion keeps expecting `"Jane Doe"`.
+The assertion intentionally remains strict because the API contract says the payment holder name should reflect the holder name of the payment method used.
 
 ### 2. Payment-list resource identity inconsistency
 
 Observed:
 
-- `POST /payments` creates payment IDs.
-- `GET /payments/{id}` preserves those IDs.
-- `GET /payment-methods/{id}/payments` returns entries with matching `payment_method_id`, `amount`, `currency`, `status`, and `created_at`.
-- The listed payment IDs are different.
-- Oldest-first ordering by `created_at` appears correct.
+- The created payments are successfully retrievable through `GET /payments/{id}`.
+- `GET /payment-methods/{id}/payments` returns corresponding records with matching `payment_method_id`, `amount`, `currency`, `status`, and `created_at`.
+- However, the payment IDs returned by the list endpoint differ from the IDs created by `POST /payments`.
+- Oldest-first ordering itself appears correct.
 
-Payment identity should be consistent across endpoints. The list test still asserts that listed IDs match the created payment IDs.
+The assertions intentionally remain strict because resource identity is expected to remain consistent across endpoints.
+
+These failures are intentionally kept visible in the regression and contract suites, and in smoke or e2e suites where applicable, rather than being masked or converted into expected failures.
 
 ## Design decisions
 
