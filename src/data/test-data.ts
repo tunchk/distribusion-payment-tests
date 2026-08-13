@@ -1,4 +1,4 @@
-export const cardPaymentMethod = {
+export const validCardDetails = {
   holder_name: 'Jane Doe',
   number: '4111111111111111',
   exp_month: 12,
@@ -6,7 +6,7 @@ export const cardPaymentMethod = {
   cvc: '737',
 } as const;
 
-export const declineCardPaymentMethod = {
+export const declinedCardDetails = {
   holder_name: 'Jane Doe',
   number: '4000000000000002',
   exp_month: 12,
@@ -34,17 +34,17 @@ export const expiredCardPaymentMethod = {
   cvc: '737',
 } as const;
 
-export const sepaPaymentMethod = {
+export const validSepaDetails = {
   holder_name: 'Jane Doe',
   iban: 'DE89370400440532013000',
 } as const;
 
-export const declineSepaPaymentMethod = {
+export const declinedSepaDetails = {
   holder_name: 'Jane Doe',
   iban: 'DE62370400440532013001',
 } as const;
 
-export const successfulPayment = {
+export const validPayment = {
   amount: 1000,
   currency: 'EUR' as const,
 };
@@ -57,10 +57,10 @@ export const unsupportedCurrency = 'TRY';
 
 export const supportedCurrencies = ['EUR', 'USD', 'GBP'] as const;
 
-export const unknownPaymentMethodId = 'pm_nonexistent_test_id';
+export const nonexistentPaymentMethodId = 'pm_nonexistent_test_id';
 
 export const nonexistentPaymentId = 'pay_nonexistent_test_id';
 
-export const nonexistentPaymentMethodLookupId = 'pm_nonexistent_404_test_id';
+export const anotherNonexistentPaymentMethodId = 'pm_nonexistent_404_test_id';
 
 export const invalidApiKey = 'invalid-test-api-key';

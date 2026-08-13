@@ -1,15 +1,15 @@
 import { expect, test } from '@playwright/test';
 import { PaymentApiClient } from '../src/client/payment-api.client';
 import {
-  cardPaymentMethod,
-  declineCardPaymentMethod,
-  declineSepaPaymentMethod,
+  validCardDetails,
+  declinedCardDetails,
+  declinedSepaDetails,
   invalidPaymentAmount,
   negativePaymentAmount,
-  sepaPaymentMethod,
-  successfulPayment,
+  validSepaDetails,
+  validPayment,
   supportedCurrencies,
-  unknownPaymentMethodId,
+  nonexistentPaymentMethodId,
   unsupportedCurrency,
 } from '../src/data/test-data';
 import { expectApiError } from '../src/helpers/expect-api-error';
@@ -19,31 +19,31 @@ import {
   createAndWaitForPayment,
 } from '../src/helpers/payment-lifecycle';
 
-test('creates a successful payment', {
+test('creates a successful Adyen payment', {
   tag: ['@regression', '@smoke', '@contract', '@e2e'],
 }, async ({ request }, testInfo) => {
   const client = new PaymentApiClient(request);
 
   const { active: activeMethod } = await createActivePaymentMethod(client, {
     type: 'adyen',
-    card: cardPaymentMethod,
+    card: validCardDetails,
   });
 
   const { payment } = await createAndWaitForPayment(client, {
     payment_method_id: activeMethod.id,
-    amount: successfulPayment.amount,
-    currency: successfulPayment.currency,
+    amount: validPayment.amount,
+    currency: validPayment.currency,
   });
 
   expect(payment.status).toBe('succeeded');
   expect(payment.failure_reason).toBeUndefined();
   expect(payment.payment_method_id).toBe(activeMethod.id);
-  expect(payment.amount).toBe(successfulPayment.amount);
-  expect(payment.currency).toBe(successfulPayment.currency);
+  expect(payment.amount).toBe(validPayment.amount);
+  expect(payment.currency).toBe(validPayment.currency);
   expect(payment.created_at).toBeTruthy();
 
   if (isApiLoggingEnabled()) {
-    const context = `Payment method holder: ${cardPaymentMethod.holder_name}\nPayment holder: ${payment.holder_name}`;
+    const context = `Payment method holder: ${validCardDetails.holder_name}\nPayment holder: ${payment.holder_name}`;
     // eslint-disable-next-line no-console
     console.log(context);
     await testInfo.attach('payment-holder-context', {
@@ -52,7 +52,7 @@ test('creates a successful payment', {
     });
   }
 
-  expect(payment.holder_name).toBe(cardPaymentMethod.holder_name);
+  expect(payment.holder_name).toBe(validCardDetails.holder_name);
 });
 
 test('card decline flow', {
@@ -63,7 +63,7 @@ test('card decline flow', {
   const { created: createdMethod, active: activeMethod } =
     await createActivePaymentMethod(client, {
       type: 'adyen',
-      card: declineCardPaymentMethod,
+      card: declinedCardDetails,
     });
 
   expect(createdMethod.status).toBe('processing');
@@ -90,7 +90,7 @@ test('SEPA decline flow', {
   const { created: createdMethod, active: activeMethod } =
     await createActivePaymentMethod(client, {
       type: 'sepa',
-      sepa: declineSepaPaymentMethod,
+      sepa: declinedSepaDetails,
     });
 
   expect(createdMethod.status).toBe('processing');
@@ -116,7 +116,7 @@ test('payment list preserves identity and oldest-first ordering', {
 
   const { active: activeMethod } = await createActivePaymentMethod(client, {
     type: 'adyen',
-    card: cardPaymentMethod,
+    card: validCardDetails,
   });
 
   const { created: createdPaymentA, payment: paymentA } =
@@ -217,7 +217,7 @@ test.describe('payment validation', () => {
     const client = new PaymentApiClient(request);
     const { active: activeMethod } = await createActivePaymentMethod(client, {
       type: 'adyen',
-      card: cardPaymentMethod,
+      card: validCardDetails,
     });
 
     const response = await client.createPayment({
@@ -235,7 +235,7 @@ test.describe('payment validation', () => {
     const client = new PaymentApiClient(request);
     const { active: activeMethod } = await createActivePaymentMethod(client, {
       type: 'adyen',
-      card: cardPaymentMethod,
+      card: validCardDetails,
     });
 
     const response = await client.createPayment({
@@ -253,7 +253,7 @@ test.describe('payment validation', () => {
     const client = new PaymentApiClient(request);
 
     const response = await client.createPayment({
-      payment_method_id: unknownPaymentMethodId,
+      payment_method_id: nonexistentPaymentMethodId,
       amount: 1000,
       currency: 'EUR',
     });
@@ -267,7 +267,7 @@ test.describe('payment validation', () => {
     const client = new PaymentApiClient(request);
     const { active: activeMethod } = await createActivePaymentMethod(client, {
       type: 'adyen',
-      card: cardPaymentMethod,
+      card: validCardDetails,
     });
 
     const { payment } = await createAndWaitForPayment(client, {
@@ -287,7 +287,7 @@ test.describe('payment validation', () => {
     const client = new PaymentApiClient(request);
     const { active: activeMethod } = await createActivePaymentMethod(client, {
       type: 'adyen',
-      card: cardPaymentMethod,
+      card: validCardDetails,
     });
 
     const response = await client.createPayment({
@@ -305,7 +305,7 @@ test.describe('payment validation', () => {
     const client = new PaymentApiClient(request);
     const { active: activeMethod } = await createActivePaymentMethod(client, {
       type: 'adyen',
-      card: cardPaymentMethod,
+      card: validCardDetails,
     });
 
     const response = await client.createPayment({
@@ -325,7 +325,7 @@ for (const currency of supportedCurrencies) {
     const client = new PaymentApiClient(request);
     const { active: activeMethod } = await createActivePaymentMethod(client, {
       type: 'adyen',
-      card: cardPaymentMethod,
+      card: validCardDetails,
     });
 
     const { payment } = await createAndWaitForPayment(client, {
@@ -339,14 +339,14 @@ for (const currency of supportedCurrencies) {
   });
 }
 
-test('successful Checkout payment', {
+test('creates a successful Checkout payment', {
   tag: ['@regression', '@contract', '@e2e'],
 }, async ({ request }) => {
   const client = new PaymentApiClient(request);
 
   const { active: activeMethod } = await createActivePaymentMethod(client, {
     type: 'checkout',
-    card: cardPaymentMethod,
+    card: validCardDetails,
   });
 
   const { payment } = await createAndWaitForPayment(client, {
@@ -362,14 +362,14 @@ test('successful Checkout payment', {
   expect(payment.created_at).toBeTruthy();
 });
 
-test('successful SEPA payment', {
+test('creates a successful SEPA payment', {
   tag: ['@regression', '@contract', '@e2e'],
 }, async ({ request }) => {
   const client = new PaymentApiClient(request);
 
   const { active: activeMethod } = await createActivePaymentMethod(client, {
     type: 'sepa',
-    sepa: sepaPaymentMethod,
+    sepa: validSepaDetails,
   });
 
   const { payment } = await createAndWaitForPayment(client, {
@@ -392,7 +392,7 @@ test('empty payment list', {
 
   const { active: activeMethod } = await createActivePaymentMethod(client, {
     type: 'adyen',
-    card: cardPaymentMethod,
+    card: validCardDetails,
   });
 
   const listResponse = await client.listPaymentsByPaymentMethod(activeMethod.id);

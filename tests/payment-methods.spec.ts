@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { PaymentApiClient } from '../src/client/payment-api.client';
 import {
-  cardPaymentMethod,
+  validCardDetails,
   expiredCardPaymentMethod,
   invalidBic,
   invalidCvc,
   invalidHolderName,
   invalidIban,
   invalidLuhnCardNumber,
-  sepaPaymentMethod,
+  validSepaDetails,
   validBic,
 } from '../src/data/test-data';
 import { expectApiError } from '../src/helpers/expect-api-error';
@@ -23,7 +23,7 @@ test.describe('payment methods', () => {
 
       const { created, active } = await createActivePaymentMethod(client, {
         type: provider,
-        card: cardPaymentMethod,
+        card: validCardDetails,
       });
 
       expect(created.id).toBeTruthy();
@@ -33,14 +33,14 @@ test.describe('payment methods', () => {
       expect(active.id).toBe(created.id);
       expect(active.type).toBe(provider);
       expect(active.card.brand).toBe('visa');
-      expect(active.card.holder_name).toBe(cardPaymentMethod.holder_name);
-      expect(active.card.last4).toBe(cardPaymentMethod.number.slice(-4));
-      expect(active.card.exp_month).toBe(cardPaymentMethod.exp_month);
-      expect(active.card.exp_year).toBe(cardPaymentMethod.exp_year);
+      expect(active.card.holder_name).toBe(validCardDetails.holder_name);
+      expect(active.card.last4).toBe(validCardDetails.number.slice(-4));
+      expect(active.card.exp_month).toBe(validCardDetails.exp_month);
+      expect(active.card.exp_year).toBe(validCardDetails.exp_year);
 
       const responseBody = JSON.stringify(active);
-      expect(responseBody).not.toContain(cardPaymentMethod.number);
-      expect(responseBody).not.toContain(cardPaymentMethod.cvc);
+      expect(responseBody).not.toContain(validCardDetails.number);
+      expect(responseBody).not.toContain(validCardDetails.cvc);
     });
   }
 
@@ -51,7 +51,7 @@ test.describe('payment methods', () => {
 
     const { created, active } = await createActivePaymentMethod(client, {
       type: 'sepa',
-      sepa: sepaPaymentMethod,
+      sepa: validSepaDetails,
     });
 
     expect(created.id).toBeTruthy();
@@ -59,12 +59,12 @@ test.describe('payment methods', () => {
     expect(created.created_at).toBeTruthy();
 
     expect(active.type).toBe('sepa');
-    expect(active.sepa.holder_name).toBe(sepaPaymentMethod.holder_name);
+    expect(active.sepa.holder_name).toBe(validSepaDetails.holder_name);
     expect(active.sepa.country).toBe('DE');
-    expect(active.sepa.iban_last4).toBe(sepaPaymentMethod.iban.slice(-4));
+    expect(active.sepa.iban_last4).toBe(validSepaDetails.iban.slice(-4));
 
     const responseBody = JSON.stringify(active);
-    expect(responseBody).not.toContain(sepaPaymentMethod.iban);
+    expect(responseBody).not.toContain(validSepaDetails.iban);
   });
 });
 
@@ -77,7 +77,7 @@ test.describe('payment method validation', () => {
     const response = await client.createPaymentMethod({
       type: 'adyen',
       card: {
-        ...cardPaymentMethod,
+        ...validCardDetails,
         number: invalidLuhnCardNumber,
       },
     });
@@ -105,7 +105,7 @@ test.describe('payment method validation', () => {
 
     const response = await client.createPaymentMethod({
       type: 'sepa',
-      card: cardPaymentMethod,
+      card: validCardDetails,
     });
 
     await expectApiError(response, 422, 'schema_mismatch');
@@ -119,7 +119,7 @@ test.describe('payment method validation', () => {
     const response = await client.createPaymentMethod({
       type: 'adyen',
       card: {
-        ...cardPaymentMethod,
+        ...validCardDetails,
         cvc: invalidCvc,
       },
     });
@@ -135,7 +135,7 @@ test.describe('payment method validation', () => {
     const response = await client.createPaymentMethod({
       type: 'sepa',
       sepa: {
-        ...sepaPaymentMethod,
+        ...validSepaDetails,
         iban: invalidIban,
       },
     });
@@ -151,7 +151,7 @@ test.describe('payment method validation', () => {
     const response = await client.createPaymentMethod({
       type: 'adyen',
       card: {
-        ...cardPaymentMethod,
+        ...validCardDetails,
         exp_month: 0,
       },
     });
@@ -167,7 +167,7 @@ test.describe('payment method validation', () => {
     const response = await client.createPaymentMethod({
       type: 'adyen',
       card: {
-        ...cardPaymentMethod,
+        ...validCardDetails,
         exp_month: 13,
       },
     });
@@ -183,7 +183,7 @@ test.describe('payment method validation', () => {
     const response = await client.createPaymentMethod({
       type: 'adyen',
       card: {
-        ...cardPaymentMethod,
+        ...validCardDetails,
         holder_name: invalidHolderName,
       },
     });
@@ -199,7 +199,7 @@ test.describe('payment method validation', () => {
     const response = await client.createPaymentMethod({
       type: 'sepa',
       sepa: {
-        ...sepaPaymentMethod,
+        ...validSepaDetails,
         bic: invalidBic,
       },
     });
@@ -216,14 +216,14 @@ test('creates a valid SEPA payment method with optional BIC', {
   const { active } = await createActivePaymentMethod(client, {
     type: 'sepa',
     sepa: {
-      ...sepaPaymentMethod,
+      ...validSepaDetails,
       bic: validBic,
     },
   });
 
   expect(active.type).toBe('sepa');
   expect(active.status).toBe('active');
-  expect(active.sepa.holder_name).toBe(sepaPaymentMethod.holder_name);
+  expect(active.sepa.holder_name).toBe(validSepaDetails.holder_name);
   expect(active.sepa.country).toBe('DE');
-  expect(active.sepa.iban_last4).toBe(sepaPaymentMethod.iban.slice(-4));
+  expect(active.sepa.iban_last4).toBe(validSepaDetails.iban.slice(-4));
 });

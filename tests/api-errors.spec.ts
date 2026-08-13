@@ -3,7 +3,7 @@ import { PaymentApiClient } from '../src/client/payment-api.client';
 import {
   invalidApiKey,
   nonexistentPaymentId,
-  nonexistentPaymentMethodLookupId,
+  anotherNonexistentPaymentMethodId,
 } from '../src/data/test-data';
 import { expectApiError } from '../src/helpers/expect-api-error';
 
@@ -53,7 +53,7 @@ test('unknown payment method', {
   const client = new PaymentApiClient(request);
 
   const response = await client.getPaymentMethod(
-    nonexistentPaymentMethodLookupId,
+    anotherNonexistentPaymentMethodId,
   );
 
   await expectApiError(response, 404, 'not_found');
@@ -75,7 +75,7 @@ test('payment list for unknown payment method', {
   const client = new PaymentApiClient(request);
 
   const response = await client.listPaymentsByPaymentMethod(
-    nonexistentPaymentMethodLookupId,
+    anotherNonexistentPaymentMethodId,
   );
 
   await expectApiError(response, 404, 'not_found');
