@@ -64,7 +64,7 @@ API_LOGGING=true npx playwright test --workers=1
 - Measured in this challenge environment: 1 worker + 500 ms polling ran in ~47–49s; 2 workers + 500 ms polling ran in ~41–42s. Three consecutive full-suite runs with 2 workers + 500 ms showed no 429 responses, polling timeouts, or additional flaky failures. This is a pragmatic setting for this shared challenge API, not a universal production default.
 - Local retries are disabled so contract failures remain immediately visible.
 - CI uses at most one retry for isolated transient/network issues.
-- The Playwright test timeout is 60 seconds; polling uses a 30-second timeout, so a poll timeout can fail with its own diagnostic message before the overall test timeout.
+- Polling times out after 25 seconds. The Playwright test timeout is 40 seconds, intentionally higher so polling can fail first with its own diagnostic message and last observed value. The extra headroom covers request setup, response parsing, logging, and assertions.
 
 ## Running tagged suites
 
@@ -130,7 +130,7 @@ npx playwright show-report
 
 Creating a payment method or payment is asynchronous. `POST` responses return a minimal `processing` object. Payment methods become `active`; payments become `succeeded` or `failed`.
 
-Tests poll `GET` until the terminal condition is reached. The default poll interval is 500 ms. Polling and bounded parallel execution can coexist; the combined request rate is why concurrency stays limited. Fixed sleeps are not used.
+Tests poll `GET` until the terminal condition is reached. The default poll interval is 500 ms. Polling and bounded parallel execution can coexist; the combined request rate is why concurrency stays limited. Fixed sleeps are avoided. Separate timeout layers keep polling diagnostics visible: a poll timeout fails with last observed state before Playwright's overall test timeout.
 
 ## Current coverage
 

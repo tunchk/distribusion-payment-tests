@@ -21,7 +21,7 @@ export async function poll<T>(
   isDone: (result: T) => boolean,
   options: PollOptions = {},
 ): Promise<T> {
-  const timeout = options.timeout ?? 30_000;
+  const timeout = options.timeout ?? 25_000;
   const interval = options.interval ?? 500;
   const start = Date.now();
   let lastResult: T | undefined;

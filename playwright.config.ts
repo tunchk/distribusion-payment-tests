@@ -14,8 +14,8 @@ if (!apiKey) {
 
 export default defineConfig({
   testDir: './tests',
-  // Comfortably above the 30s poll timeout used by async lifecycle helpers.
-  timeout: 60_000,
+  // Comfortably above the 25s poll timeout used by async lifecycle helpers.
+  timeout: 40_000,
   // Shared remote API (300 req/min). Two workers with 500 ms polling for bounded concurrency.
   fullyParallel: false,
   workers: 2,
