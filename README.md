@@ -48,7 +48,7 @@ Full suite:
 npm test
 ```
 
-The Playwright config already uses a single worker by default because the suite targets a shared, rate-limited remote API.
+The suite defaults to 2 workers. The API is remote and rate-limited to 300 requests/minute, and async payment-method/payment flows poll resource state, so parallelism and polling are tuned together. Concurrency is bounded rather than unrestricted.
 
 Deterministic debug run:
 
@@ -56,11 +56,12 @@ Deterministic debug run:
 API_LOGGING=true npx playwright test --workers=1
 ```
 
-Passing `--workers=1` is optional for local debugging; it mainly keeps request/response logs sequential when `API_LOGGING=true`.
+`--workers=1` is useful for sequential request/response logs during debugging, even though the normal default is 2 workers.
 
 ### Execution policy
 
-- One worker by default, so request volume stays predictable against the shared API's 300 requests/minute limit.
+- Two workers by default. Parallelism is intentionally bounded because the remote API is rate-limited and asynchronous flows poll resource state.
+- Measured in this challenge environment: 1 worker + 500 ms polling ran in ~47–49s; 2 workers + 500 ms polling ran in ~41–42s. Three consecutive full-suite runs with 2 workers + 500 ms showed no 429 responses, polling timeouts, or additional flaky failures. This is a pragmatic setting for this shared challenge API, not a universal production default.
 - Local retries are disabled so contract failures remain immediately visible.
 - CI uses at most one retry for isolated transient/network issues.
 - The Playwright test timeout is 60 seconds; polling uses a 30-second timeout, so a poll timeout can fail with its own diagnostic message before the overall test timeout.
@@ -129,7 +130,7 @@ npx playwright show-report
 
 Creating a payment method or payment is asynchronous. `POST` responses return a minimal `processing` object. Payment methods become `active`; payments become `succeeded` or `failed`.
 
-Tests poll `GET` until the terminal condition is reached. Polling has configurable timeout and interval. Fixed sleeps are not used.
+Tests poll `GET` until the terminal condition is reached. The default poll interval is 500 ms. Polling and bounded parallel execution can coexist; the combined request rate is why concurrency stays limited. Fixed sleeps are not used.
 
 ## Current coverage
 
@@ -208,7 +209,7 @@ These failures are intentionally kept visible in the regression and contract sui
 - Thin API client around Playwright `APIRequestContext`.
 - The client returns raw `APIResponse` objects so tests can assert both success and error responses.
 - Assertions stay in spec files.
-- Lightweight reusable helpers validate documented response shapes (ProcessingResource, PaymentMethod, Payment, list wrapper, Error) without a JSON Schema/OpenAPI validator.
+- Lightweight reusable contract assertions validate documented response shapes, required fields, enums, conditional fields, date-times, and sensitive-data exclusion without introducing a full OpenAPI runtime validator.
 - Test data is deterministic.
 - Reusable polling is used instead of fixed sleeps.
 - Credentials come from environment variables.
@@ -236,6 +237,7 @@ src/
     payment-api.client.ts
   helpers/
     expect-api-error.ts
+    expect-contract.ts
     logger.ts
     payment-lifecycle.ts
     poll.ts
