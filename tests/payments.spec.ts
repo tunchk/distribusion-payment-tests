@@ -13,6 +13,10 @@ import {
   unsupportedCurrency,
 } from '../src/data/test-data';
 import { expectApiError } from '../src/helpers/expect-api-error';
+import {
+  expectPayment,
+  expectPaymentListWrapper,
+} from '../src/helpers/expect-contract';
 import { isApiLoggingEnabled } from '../src/helpers/logger';
 import {
   createActivePaymentMethod,
@@ -35,12 +39,10 @@ test('creates a successful Adyen payment', {
     currency: validPayment.currency,
   });
 
-  expect(payment.status).toBe('succeeded');
-  expect(payment.failure_reason).toBeUndefined();
+  expectPayment(payment, { status: 'succeeded' });
   expect(payment.payment_method_id).toBe(activeMethod.id);
   expect(payment.amount).toBe(validPayment.amount);
   expect(payment.currency).toBe(validPayment.currency);
-  expect(payment.created_at).toBeTruthy();
 
   if (isApiLoggingEnabled()) {
     const context = `Payment method holder: ${validCardDetails.holder_name}\nPayment holder: ${payment.holder_name}`;
@@ -60,13 +62,11 @@ test('card decline flow', {
 }, async ({ request }) => {
   const client = new PaymentApiClient(request);
 
-  const { created: createdMethod, active: activeMethod } =
+  const { active: activeMethod } =
     await createActivePaymentMethod(client, {
       type: 'adyen',
       card: declinedCardDetails,
     });
-
-  expect(createdMethod.status).toBe('processing');
 
   const { payment } = await createAndWaitForPayment(client, {
     payment_method_id: activeMethod.id,
@@ -74,12 +74,13 @@ test('card decline flow', {
     currency: 'EUR',
   });
 
-  expect(payment.status).toBe('failed');
-  expect(payment.failure_reason).toBe('card_declined');
+  expectPayment(payment, {
+    status: 'failed',
+    failureReason: 'card_declined',
+  });
   expect(payment.payment_method_id).toBe(activeMethod.id);
   expect(payment.amount).toBe(1000);
   expect(payment.currency).toBe('EUR');
-  expect(payment.created_at).toBeTruthy();
 });
 
 test('SEPA decline flow', {
@@ -87,13 +88,11 @@ test('SEPA decline flow', {
 }, async ({ request }) => {
   const client = new PaymentApiClient(request);
 
-  const { created: createdMethod, active: activeMethod } =
+  const { active: activeMethod } =
     await createActivePaymentMethod(client, {
       type: 'sepa',
       sepa: declinedSepaDetails,
     });
-
-  expect(createdMethod.status).toBe('processing');
 
   const { payment } = await createAndWaitForPayment(client, {
     payment_method_id: activeMethod.id,
@@ -101,12 +100,13 @@ test('SEPA decline flow', {
     currency: 'EUR',
   });
 
-  expect(payment.status).toBe('failed');
-  expect(payment.failure_reason).toBe('debit_declined');
+  expectPayment(payment, {
+    status: 'failed',
+    failureReason: 'debit_declined',
+  });
   expect(payment.payment_method_id).toBe(activeMethod.id);
   expect(payment.amount).toBe(1000);
   expect(payment.currency).toBe('EUR');
-  expect(payment.created_at).toBeTruthy();
 });
 
 test('payment list preserves identity and oldest-first ordering', {
@@ -141,18 +141,28 @@ test('payment list preserves identity and oldest-first ordering', {
 
   expect(listResponse.status()).toBe(200);
   const body = await listResponse.json();
-  expect(Array.isArray(body.data)).toBe(true);
+  const listedPayments = expectPaymentListWrapper(body) as Array<{
+    id: string;
+    amount: number;
+    currency: string;
+    payment_method_id: string;
+    created_at: string;
+  }>;
 
-  const listedA = body.data.find(
+  for (const item of listedPayments) {
+    expectPayment(item, { status: 'succeeded' });
+  }
+
+  const listedA = listedPayments.find(
     (payment: { amount: number }) => payment.amount === 1000,
   );
-  const listedB = body.data.find(
+  const listedB = listedPayments.find(
     (payment: { amount: number }) => payment.amount === 2000,
   );
-  const listedAIndex = body.data.findIndex(
+  const listedAIndex = listedPayments.findIndex(
     (payment: { amount: number }) => payment.amount === 1000,
   );
-  const listedBIndex = body.data.findIndex(
+  const listedBIndex = listedPayments.findIndex(
     (payment: { amount: number }) => payment.amount === 2000,
   );
 
@@ -177,15 +187,15 @@ test('payment list preserves identity and oldest-first ordering', {
   expect.soft(listedA).toBeTruthy();
   expect.soft(listedB).toBeTruthy();
 
-  const ids = body.data.map((payment: { id: string }) => payment.id);
+  const ids = listedPayments.map((payment: { id: string }) => payment.id);
   expect.soft(ids).toContain(createdPaymentA.id);
   expect.soft(ids).toContain(createdPaymentB.id);
   expect.soft(listedA?.id).toBe(createdPaymentA.id);
   expect.soft(listedB?.id).toBe(createdPaymentB.id);
 
-  for (let i = 1; i < body.data.length; i++) {
-    const previousCreatedAt = new Date(body.data[i - 1].created_at).getTime();
-    const currentCreatedAt = new Date(body.data[i].created_at).getTime();
+  for (let i = 1; i < listedPayments.length; i++) {
+    const previousCreatedAt = new Date(listedPayments[i - 1].created_at).getTime();
+    const currentCreatedAt = new Date(listedPayments[i].created_at).getTime();
     expect
       .soft(previousCreatedAt)
       .toBeLessThanOrEqual(currentCreatedAt);
@@ -276,7 +286,7 @@ test.describe('payment validation', () => {
       currency: 'EUR',
     });
 
-    expect(payment.status).toBe('succeeded');
+    expectPayment(payment, { status: 'succeeded' });
     expect(payment.amount).toBe(1);
     expect(payment.currency).toBe('EUR');
   });
@@ -334,7 +344,7 @@ for (const currency of supportedCurrencies) {
       currency,
     });
 
-    expect(payment.status).toBe('succeeded');
+    expectPayment(payment, { status: 'succeeded' });
     expect(payment.currency).toBe(currency);
   });
 }
@@ -355,11 +365,10 @@ test('creates a successful Checkout payment', {
     currency: 'EUR',
   });
 
-  expect(payment.status).toBe('succeeded');
+  expectPayment(payment, { status: 'succeeded' });
   expect(payment.payment_method_id).toBe(activeMethod.id);
   expect(payment.amount).toBe(1000);
   expect(payment.currency).toBe('EUR');
-  expect(payment.created_at).toBeTruthy();
 });
 
 test('creates a successful SEPA payment', {
@@ -378,11 +387,10 @@ test('creates a successful SEPA payment', {
     currency: 'EUR',
   });
 
-  expect(payment.status).toBe('succeeded');
+  expectPayment(payment, { status: 'succeeded' });
   expect(payment.payment_method_id).toBe(activeMethod.id);
   expect(payment.amount).toBe(1000);
   expect(payment.currency).toBe('EUR');
-  expect(payment.created_at).toBeTruthy();
 });
 
 test('empty payment list', {
@@ -399,6 +407,6 @@ test('empty payment list', {
 
   expect(listResponse.status()).toBe(200);
   const body = await listResponse.json();
-  expect(Array.isArray(body.data)).toBe(true);
-  expect(body.data).toEqual([]);
+  const listedPayments = expectPaymentListWrapper(body);
+  expect(listedPayments).toEqual([]);
 });

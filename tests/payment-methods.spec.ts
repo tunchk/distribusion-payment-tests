@@ -12,6 +12,7 @@ import {
   validBic,
 } from '../src/data/test-data';
 import { expectApiError } from '../src/helpers/expect-api-error';
+import { expectActivePaymentMethod } from '../src/helpers/expect-contract';
 import { createActivePaymentMethod } from '../src/helpers/payment-lifecycle';
 
 test.describe('payment methods', () => {
@@ -26,21 +27,19 @@ test.describe('payment methods', () => {
         card: validCardDetails,
       });
 
-      expect(created.id).toBeTruthy();
-      expect(created.status).toBe('processing');
-      expect(created.created_at).toBeTruthy();
-
       expect(active.id).toBe(created.id);
-      expect(active.type).toBe(provider);
+      expectActivePaymentMethod(active, {
+        type: provider,
+        sensitiveInputs: {
+          cardNumber: validCardDetails.number,
+          cvc: validCardDetails.cvc,
+        },
+      });
       expect(active.card.brand).toBe('visa');
       expect(active.card.holder_name).toBe(validCardDetails.holder_name);
       expect(active.card.last4).toBe(validCardDetails.number.slice(-4));
       expect(active.card.exp_month).toBe(validCardDetails.exp_month);
       expect(active.card.exp_year).toBe(validCardDetails.exp_year);
-
-      const responseBody = JSON.stringify(active);
-      expect(responseBody).not.toContain(validCardDetails.number);
-      expect(responseBody).not.toContain(validCardDetails.cvc);
     });
   }
 
@@ -54,17 +53,16 @@ test.describe('payment methods', () => {
       sepa: validSepaDetails,
     });
 
-    expect(created.id).toBeTruthy();
-    expect(created.status).toBe('processing');
-    expect(created.created_at).toBeTruthy();
-
-    expect(active.type).toBe('sepa');
+    expect(active.id).toBe(created.id);
+    expectActivePaymentMethod(active, {
+      type: 'sepa',
+      sensitiveInputs: {
+        iban: validSepaDetails.iban,
+      },
+    });
     expect(active.sepa.holder_name).toBe(validSepaDetails.holder_name);
     expect(active.sepa.country).toBe('DE');
     expect(active.sepa.iban_last4).toBe(validSepaDetails.iban.slice(-4));
-
-    const responseBody = JSON.stringify(active);
-    expect(responseBody).not.toContain(validSepaDetails.iban);
   });
 });
 
@@ -221,8 +219,12 @@ test('creates a valid SEPA payment method with optional BIC', {
     },
   });
 
-  expect(active.type).toBe('sepa');
-  expect(active.status).toBe('active');
+  expectActivePaymentMethod(active, {
+    type: 'sepa',
+    sensitiveInputs: {
+      iban: validSepaDetails.iban,
+    },
+  });
   expect(active.sepa.holder_name).toBe(validSepaDetails.holder_name);
   expect(active.sepa.country).toBe('DE');
   expect(active.sepa.iban_last4).toBe(validSepaDetails.iban.slice(-4));

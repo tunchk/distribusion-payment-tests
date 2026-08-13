@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 
 import { PaymentApiClient } from '../client/payment-api.client';
+import { expectProcessingResource } from './expect-contract';
 import { poll } from './poll';
 
 export async function createActivePaymentMethod(
@@ -11,6 +12,7 @@ export async function createActivePaymentMethod(
 
   expect(createResponse.status()).toBe(201);
   const created = await createResponse.json();
+  expectProcessingResource(created);
 
   const active = await poll(
     async () => {
@@ -35,7 +37,7 @@ export async function createAndWaitForPayment(
 
   expect(createResponse.status()).toBe(201);
   const created = await createResponse.json();
-  expect(created.status).toBe('processing');
+  expectProcessingResource(created);
 
   const payment = await poll(
     async () => {

@@ -9,7 +9,7 @@ export async function expectApiError(
   const body = await response.json();
   expect(body.error).toBeTruthy();
   expect(body.error.code).toBe(expectedCode);
-  expect(body.error.message).toBeTruthy();
+  expect(typeof body.error.message).toBe('string');
   expect(body.error.message.length).toBeGreaterThan(0);
   return body;
 }

@@ -208,6 +208,7 @@ These failures are intentionally kept visible in the regression and contract sui
 - Thin API client around Playwright `APIRequestContext`.
 - The client returns raw `APIResponse` objects so tests can assert both success and error responses.
 - Assertions stay in spec files.
+- Lightweight reusable helpers validate documented response shapes (ProcessingResource, PaymentMethod, Payment, list wrapper, Error) without a JSON Schema/OpenAPI validator.
 - Test data is deterministic.
 - Reusable polling is used instead of fixed sleeps.
 - Credentials come from environment variables.
