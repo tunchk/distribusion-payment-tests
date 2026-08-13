@@ -224,7 +224,30 @@ Intentionally excluded to keep the exercise focused and avoid unnecessary load o
 - load/stress testing
 - deliberate rate-limit exhaustion
 - 413 payload-too-large testing
+- racing asynchronous list items while they are still `processing`
 - full OpenAPI/JSON Schema validator integration
+
+### Intentionally not exercised
+
+These contracts were considered and left out of this suite on purpose. They remain testable in a controlled environment.
+
+#### 1. Rate-limit exhaustion (429)
+
+The API allows 300 requests/minute per API key. Exceeding that returns `429` with a `Retry-After` header. We do not exhaust the limit against the shared challenge service because the brief asks us not to stress it.
+
+In a controlled environment: send requests at a known rate until the threshold is exceeded; assert the first throttled response is `429`; assert `Retry-After` is present and valid; confirm requests stay throttled during that window; then confirm normal requests recover after it expires. No skipped 429 test is added here.
+
+#### 2. Payload-too-large (413)
+
+`413` is a documented error contract. We do not send oversized bodies to the shared remote service: it is low-value for core payment-flow coverage and creates unnecessary traffic.
+
+In a controlled environment this is boundary-value testing: obtain the configured maximum body size; send a payload just below the limit (and the exact boundary if inclusive/exclusive behavior is defined); send a payload just above the limit; assert `413` and the documented error envelope/code.
+
+#### 3. Processing resources in payment lists
+
+`GET /payment-methods/{id}/payments` may return `ProcessingResource` or terminal `Payment` items. Current list tests wait until created payments are terminal before validating list items. We do not race the async transition here because that would be timing-dependent and potentially flaky. This environment does not give deterministic control over processing latency.
+
+In a deterministic environment: create a payment whose processing duration can be delayed; call the list endpoint before it becomes terminal; locate the created item and validate it as a `ProcessingResource` (`id`, `status = processing`, `created_at`); wait until it is terminal; list again and verify the same logical payment is represented as a terminal `Payment`.
 
 ## Project structure
 
